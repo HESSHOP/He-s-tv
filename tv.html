@@ -92,12 +92,30 @@ h3{font-size:16px;margin:16px 16px 8px}
 .chipbar{display:flex;gap:8px;overflow-x:auto;padding:4px 16px 6px;scrollbar-width:none}.chipbar button{flex:none;background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:6px;padding:7px 12px;font-size:12px;font-family:inherit}
 #gm{position:absolute;inset:0;background:#000d;z-index:70;display:grid;place-items:center;text-align:center}#gm>div{background:var(--card);padding:24px;border-radius:12px}
 #plc{overflow-y:auto}
+
+#hb{position:absolute;top:12px;right:12px;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:color-mix(in srgb,var(--card) 85%,transparent);color:var(--txt);font-size:14px;font-weight:700;line-height:1;cursor:pointer;z-index:30;padding:0;backdrop-filter:blur(8px)}
+#hp{position:absolute;inset:0;background:var(--bg);z-index:55;display:none;flex-direction:column;padding:56px 20px 24px;overflow-y:auto;text-align:left}#hp.on{display:flex}
+#hp h2{margin:0 0 6px;font-size:20px}#hp p{max-width:none;margin:0 0 12px}#hp .x{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;border:0;background:var(--card);color:var(--txt);font-size:16px;cursor:pointer}
+#hp label{display:block;font-size:12px;color:var(--mut);margin:10px 0 4px}#hp input[type=text],#hp input[type=email],#hp textarea{width:100%;background:var(--card);border:1px solid var(--line);border-radius:8px;color:var(--txt);font:inherit;font-size:14px;padding:10px;outline:0}#hp textarea{min-height:110px;resize:vertical}#hp input:focus,#hp textarea:focus{border-color:var(--red)}
+#hp .hl{display:flex;gap:8px;margin-bottom:6px}#hp .hl a{flex:1;text-align:center;background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:9px 6px;font-size:12px;text-decoration:none}
+#hp .ck{display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:var(--mut);margin:12px 0 0}#hp .ck input{margin-top:2px;flex:none}#hp .ck a{color:var(--red)}
+#hp .er{color:#ff5252;font-size:12px;min-height:16px;margin:6px 0 0}#hp .hp2{position:absolute;left:-9999px}
 </style></head><body>
 <div id="app">
 <div id="screens"></div>
 <div class="nav" id="nav"><button class="nx" onclick="nextOb()">Suivant</button><button onclick="go('s6')">Passer ›</button></div>
 <div class="tb" id="tb"></div>
 <div id="pl"><button onclick="closePl()">Fermer ✕</button><div id="plc" style="padding:16px;font-size:13px;color:#aaa"></div></div>
+<button id="hb" type="button" onclick="openHp()" aria-label="Aide">?</button>
+<div id="hp" role="dialog" aria-label="Aide et contact"><button class="x" type="button" onclick="closeHp()" aria-label="Fermer">✕</button>
+<h2>Aide &amp; contact</h2><p>Un souci ou une question ? Écrivez à l'équipe Prime Purge, réponse sous 48 h ouvrées.</p>
+<div class="hl"><a href="https://t.me/PRlME_PURGE_TECH" target="_blank" rel="noopener noreferrer">Telegram</a><a href="mailto:primepurgetech@gmail.com">E-mail</a><a href="/" target="_blank">Site Prime Purge</a></div>
+<label for="hpn">Nom</label><input type="text" id="hpn" maxlength="100" autocomplete="name">
+<label for="hpe">Adresse e-mail</label><input type="email" id="hpe" maxlength="200" autocomplete="email">
+<label for="hpm">Message</label><textarea id="hpm" maxlength="3000"></textarea>
+<div class="hp2" aria-hidden="true"><input type="text" id="hpw" tabindex="-1" autocomplete="off"></div>
+<label class="ck" for="hpc"><input type="checkbox" id="hpc"><span>J'accepte que Prime Purge utilise ces informations pour répondre à ma demande (<a href="/confidentialite" target="_blank">confidentialité</a>).</span></label>
+<p class="er" id="hper" aria-live="polite"></p><button class="btn" type="button" id="hps" onclick="sendHp()">Envoyer</button></div>
 <div class="msg" id="msg"></div>
 </div>
 <script>
@@ -258,4 +276,20 @@ async function collage(){let u=[];
 /* ===== Init ===== */
 collage();applyTheme();
 setTimeout(()=>{if(cur!=='s1')return;if(user.email){go('s11');toast('Content de vous revoir, '+user.name)}else go('s2')},2500);
+
+/* ===== Aide / contact Prime Purge ===== */
+let hpT=0;
+function openHp(){hpT=Date.now();const u=(typeof user!=='undefined'&&user)||{};if(!$('#hpn').value&&u.name)$('#hpn').value=u.name;if(!$('#hpe').value&&u.email)$('#hpe').value=u.email;$('#hper').textContent='';$('#hp').classList.add('on')}
+function closeHp(){$('#hp').classList.remove('on')}
+async function sendHp(){
+ const n=$('#hpn').value.trim(),e=$('#hpe').value.trim(),m=$('#hpm').value.trim(),er=$('#hper');
+ if(n.length<2)return er.textContent='Indiquez votre nom (2 caractères minimum).';
+ if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))return er.textContent='Indiquez une adresse e-mail valide.';
+ if(m.length<10)return er.textContent='Votre message doit faire au moins 10 caractères.';
+ if(!$('#hpc').checked)return er.textContent='Cochez la case pour continuer.';
+ er.textContent='';const b=$('#hps');b.disabled=true;b.textContent='Envoi…';
+ try{const r=await fetch('/api/contact',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({name:n,email:e,message:m,consent:'on',website:$('#hpw').value,t:hpT-0})});
+  const j=await r.json();if(!j.ok)throw 0;$('#hpm').value='';closeHp();toast('Message envoyé, merci !')}
+ catch(x){er.textContent="Envoi impossible. Écrivez-nous à primepurgetech@gmail.com."}
+ b.disabled=false;b.textContent='Envoyer'}
 </script></body></html>
