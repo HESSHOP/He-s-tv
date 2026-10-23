@@ -1,6 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /api/
-Disallow: /merci
-
-Sitemap: https://he-s-tv.vercel.app/sitemap.xml
