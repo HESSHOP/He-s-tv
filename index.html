@@ -100,6 +100,10 @@ h3{font-size:16px;margin:16px 16px 8px}
 #hp .hl{display:flex;gap:8px;margin-bottom:6px}#hp .hl a{flex:1;text-align:center;background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:9px 6px;font-size:12px;text-decoration:none}
 #hp .ck{display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:var(--mut);margin:12px 0 0}#hp .ck input{margin-top:2px;flex:none}#hp .ck a{color:var(--red)}
 #hp .er{color:#ff5252;font-size:12px;min-height:16px;margin:6px 0 0}#hp .hp2{position:absolute;left:-9999px}
+
+.ic2{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;vertical-align:-4px;margin-right:6px}.ic2.fl{fill:currentColor;stroke:none}
+.btn.ib{width:46px;padding:0;flex:none}.ib .ic2{margin:0;vertical-align:middle}.ib.on{color:var(--red)}.ib.on .ic2{fill:var(--red);stroke:var(--red)}
+.pact{display:flex;gap:8px;margin-top:10px}.pact .btn{margin:0}
 </style></head><body>
 <div id="app">
 <div id="screens"></div>
@@ -156,7 +160,7 @@ S.push(`<section class="scr main" id="s11"></section><section class="scr main" i
 $('#screens').innerHTML=S.join('');
 /* ===== Navigation ===== */
 const rd=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
-let cur='s1',user=rd('hu',{name:'Invité'}),list=rd('hl',[]),hist=rd('hh',[]),accs=rd('hacc',{}),unread=rd('hun',1),cache={};
+let cur='s1',user=rd('hu',{name:'Invité'}),list=rd('hl',[]),likes=rd('hk',[]),hist=rd('hh',[]),accs=rd('hacc',{}),unread=rd('hun',1),cache={};
 const tabsOf=['s11','s14','s16','s12'];
 function go(id){cur=id;clearInterval(window.ht);document.querySelectorAll('.scr').forEach(s=>s.classList.toggle('on',s.id===id));
  $('#nav').style.display=['s2','s3','s4','s5'].includes(id)?'flex':'none';
@@ -171,7 +175,7 @@ const sha=async s=>{try{return[...new Uint8Array(await crypto.subtle.digest('SHA
 async function login(){const m=$('#em').value.trim().toLowerCase(),r=[bad('em',!mailOK(m)),bad('pw',$('#pw').value.length<8)];if(r.some(Boolean))return;const a=accs[m];if(!a||a.h!==await sha(m+$('#pw').value)){toast('E-mail ou mot de passe incorrect. Créez un compte si besoin.');return}user={name:a.name,email:m};sv('hu',user);enter()}
 async function reg(){const m=$('#em2').value.trim().toLowerCase(),r=[bad('un',$('#un').value.length<3),bad('em2',!mailOK(m)),bad('tel',$('#tel').value.replace(/\D/g,'').length<8),bad('pw2',$('#pw2').value.length<8)];if(r.some(Boolean))return;if(accs[m]){toast('Un compte existe déjà avec cet e-mail.');return}accs[m]={name:$('#un').value.trim(),h:await sha(m+$('#pw2').value)};sv('hacc',accs);user={name:accs[m].name,email:m};sv('hu',user);go('s9')}
 function forgot(){if(!bad('em3',$('#em3').value.length<3)){toast('Lien envoyé ✓');setTimeout(()=>go('s7'),1200)}}
-function guest(){enter()}
+function guest(){user={name:'Invité',guest:1};sv('hu',user);enter()}
 function enter(){toast('Bienvenue '+user.name+' ✓');go('s11')}
 function logout(){user={name:'Invité'};sv('hu',null);toast('Déconnecté');go('s7')}
 const GOOGLE_CLIENT_ID=""; /* à créer dans Google Cloud Console (voir LISEZMOI) */
@@ -207,44 +211,64 @@ async function news(){const el=$('#s16');el.innerHTML=hb('Nouveau','s11')+`<div 
  const d=await T('/trending/all/day'),r=(d.results||[]).filter(x=>x.backdrop_path&&x.media_type!=='person');
  $('#nl').innerHTML=r.length?r.map(x=>{const n=x.title||x.name,v=x.vote_average||0;return `<div class="wide" onclick="detail('${x.media_type}',${x.id})"><div class="wi">${im(x.backdrop_path,'w780','',n)}<span class="pl"></span></div><div class="wm"><b>${n}</b> <span class="stars">${stars(v)}</span></div><div class="chips"><span>${(x.release_date||x.first_air_date||'').slice(0,4)}</span><span>${x.media_type==='tv'?'Série':'Film'}</span><span>★ ${v.toFixed(1)}</span></div><p class="ov">${x.overview||''}</p></div>`}).join(''):rt('news()')}
 async function detail(t,id){go('s15');const el=$('#s15');el.innerHTML=hb('Stream TV','s11')+'<div class="hero sk"></div>';
- const [d,r]=await Promise.all([T(`/${t}/${id}`),T(`/${t}/${id}/recommendations`)]),n=d.title||d.name,m=d.runtime||(d.episode_run_time||[])[0];
- el.innerHTML=hb('Stream TV','s11')+`<div class="hero">${im(d.poster_path||d.backdrop_path,'w780','',n)}<b>${n||''}</b></div><div class="acts" style="margin-top:12px"><button class="btn sm w" onclick="play('${t}',${id})">▶ Lire</button><button class="btn sm g" onclick="addL('${t}',${id})">+ Ma liste</button></div><div style="padding:12px 16px"><span class="stars">${stars(d.vote_average)}</span><div class="chips"><span>${(d.release_date||d.first_air_date||'').slice(0,4)}</span>${m?`<span>${Math.floor(m/60)?Math.floor(m/60)+' h ':''}${m%60} min</span>`:''}${(d.genres||[]).slice(0,3).map(g=>`<span>${g.name}</span>`).join('')}</div><p style="max-width:none;margin-top:8px">${d.overview||'Synopsis indisponible.'}</p></div><h3>Tendances</h3><div class="rowx">${(r.results||[]).filter(x=>x.poster_path).map(x=>pc(x,t)).join('')}</div>`;el.scrollTop=0;catRows(el)}
+ const [d,r]=await Promise.all([T(`/${t}/${id}`),T(`/${t}/${id}/recommendations`)]),n=d.title||d.name,m=d.runtime||(d.episode_run_time||[])[0];window.CUR={t,id,d};
+ el.innerHTML=hb('Stream TV','s11')+`<div class="hero">${im(d.poster_path||d.backdrop_path,'w780','',n)}<b>${n||''}</b></div><div class="acts" style="margin-top:12px"><button class="btn sm w" onclick="play('${t}',${id})">${ICO.play}Lire</button><button class="btn sm g" onclick="addL('${t}',${id})">${ICO.plus}Ma liste</button><button class="btn sm g ib lkb ${isLk(t,id)?'on':''}" aria-label="J'aime" onclick="likeT('${t}',${id})">${ICO.heart}</button><button class="btn sm g ib" aria-label="Télécharger" onclick="dl('${t}',${id})">${ICO.dl}</button></div><div style="padding:12px 16px"><span class="stars">${stars(d.vote_average)}</span><div class="chips"><span>${(d.release_date||d.first_air_date||'').slice(0,4)}</span>${m?`<span>${Math.floor(m/60)?Math.floor(m/60)+' h ':''}${m%60} min</span>`:''}${(d.genres||[]).slice(0,3).map(g=>`<span>${g.name}</span>`).join('')}</div><p style="max-width:none;margin-top:8px">${d.overview||'Synopsis indisponible.'}</p></div><h3>Tendances</h3><div class="rowx">${(r.results||[]).filter(x=>x.poster_path).map(x=>pc(x,t)).join('')}</div>`;el.scrollTop=0;catRows(el)}
 async function addL(t,id){const d=await T(`/${t}/${id}`);if(!list.find(x=>x.id===id)){list.push({id,t,n:d.title||d.name,p:d.poster_path,v:d.vote_average,y:(d.release_date||d.first_air_date||'').slice(0,4)});try{localStorage.setItem('hl',JSON.stringify(list))}catch(e){}}toast('Ajouté à Ma liste ✓')}
 const CATS=[['K-Drama','/discover/tv?with_original_language=ko&with_genres=18&sort_by=popularity.desc','tv'],['Séries','/trending/tv/week','tv'],['Films','/trending/movie/week','movie'],['Horreur','/discover/movie?with_genres=27&sort_by=popularity.desc','movie'],['Hollywood','/discover/movie?with_original_language=en&sort_by=popularity.desc','movie'],['Bollywood','/discover/movie?with_original_language=hi&sort_by=popularity.desc','movie'],['Populaires films et séries','/trending/all/week','all']];
 const chipbar=`<div class="chipbar">${CATS.map((c,i)=>`<button onclick="document.getElementById('cat${i}').scrollIntoView({behavior:'smooth'})">${c[0]}</button>`).join('')}</div>`;
 function catRows(el){CATS.forEach(([n,q,t],i)=>{const d=document.createElement('div');d.id='cat'+i;d.innerHTML=`<h3>${n}</h3><div class="rowx">${'<div class="sk"></div>'.repeat(4)}</div>`;el.appendChild(d);T(q).then(r=>{const l=(r.results||[]).filter(x=>x.poster_path&&x.media_type!=='person');d.querySelector('.rowx').innerHTML=l.length?l.map(x=>pc(x,t==='all'?'movie':t)).join(''):'<p style="max-width:none">Indisponible pour le moment.</p>'})})}
 function rec(t,id,d){hist=hist.filter(x=>x.id!==id);hist.unshift({id,t,n:d.title||d.name,p:d.poster_path,v:d.vote_average,y:(d.release_date||d.first_air_date||'').slice(0,4)});hist=hist.slice(0,40);sv('hh',hist)}
-function profile(){const u=user,g=!u.email,IC={h:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',b:'<path d="M6 3h12v18l-6-4-6 4z"/>',m:'<path d="M6 17V11a6 6 0 0112 0v6l2 2H4zM10 21h4"/>',t:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 3l4 4 4-4"/>',c:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>',a:'<path d="M4 5h16v11H9l-5 4z"/>',s:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',p:'<path d="M12 3a9 9 0 100 18c1.500 0 2-1 1.500-2s0-2 1.500-2H17a4 4 0 004-4c0-5-4-10-9-10z"/>',r:'<path d="M4 5h16v11H9l-5 4z"/><path d="M12 8v4"/>',o:'<path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9"/>'};
+function profile(){const u=user,g=!u.email,IC={k:'<path d="M12 21l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21z"/>',h:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',b:'<path d="M6 3h12v18l-6-4-6 4z"/>',m:'<path d="M6 17V11a6 6 0 0112 0v6l2 2H4zM10 21h4"/>',t:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 3l4 4 4-4"/>',c:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>',a:'<path d="M4 5h16v11H9l-5 4z"/>',s:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',p:'<path d="M12 3a9 9 0 100 18c1.500 0 2-1 1.500-2s0-2 1.500-2H17a4 4 0 004-4c0-5-4-10-9-10z"/>',r:'<path d="M4 5h16v11H9l-5 4z"/><path d="M12 8v4"/>',o:'<path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9"/>'};
  const row=(i,l,r,f)=>`<div class="mi" onclick="${f}"><svg viewBox="0 0 24 24">${IC[i]}</svg><span>${l}</span><em>${r}</em><i>›</i></div>`;
  $('#s12').innerHTML=`<div class="pf"><img class="av" src="${u.pic||'/assets/avatar.jpg'}" alt="Photo de profil" referrerpolicy="no-referrer" onerror="this.src='/assets/avatar.jpg'"><div><b>${u.name}</b><span class="tag">${g?'Invité':u.g?'Compte Google':'Compte HE\'S TV'}</span><div class="chip2">${u.email||'Non connecté'}</div></div>${GEAR}</div>
 <div class="bn">${g?'<div><b>Connectez-vous</b><small>Gardez votre liste et votre historique sur cet appareil.</small></div><button class="btn sm w" style="width:auto;padding:0 16px" onclick="go(\'s7\')">Connexion</button>':'<div><b>Compte connecté</b><small>Vous serez reconnu au prochain lancement.</small></div>'}</div>
-<div class="mg">${row('h','Historique de visionnage',hist.length,"openList('h')")}${row('b','Ma liste',list.length,"openList('l')")}${row('m','Messages',unread?'<u>'+unread+'</u>':'',"openList('m')")}${row('t','Chaînes en direct','',"go('s18')")}</div>
+<div class="mg">${row('h','Historique de visionnage',hist.length,"openList('h')")}${row('b','Ma liste',list.length,"openList('l')")}${row('k',"Mes j'aime",likes.length,"openList('k')")}${row('m','Messages',unread?'<u>'+unread+'</u>':'',"openList('m')")}${row('t','Chaînes en direct','',"go('s18')")}</div>
 <div class="mg">${row('c','Communautés','',"window.open('https://t.me/PRlME_PURGE_TECH','_blank')")}${row('a','Mon activité',hist.length+list.length,"openList('h')")}</div>
 <div class="mg">${row('s','Paramètres','',"go('s17')")}${row('p','Apparence','Thème',"go('s17')")}${row('r','Retour','',"location.href='mailto:primepurgetech@gmail.com?subject=Retour%20HE%27S%20TV'")}${g?'':row('o','Se déconnecter','',"logout()")}</div>
 <p class="site">Site officiel : ${location.host||'hestv'} <span class="lnk" onclick="navigator.clipboard&&navigator.clipboard.writeText(location.origin).then(()=>toast('Lien copié ✓'))">Copier le lien</span></p>`}
 function openList(k){let t,b;if(k==='m'){unread=0;sv('hun',0);t='Messages';b=`<div class="it"><div><b>Bienvenue sur HE'S TV</b><br><small style="color:var(--mut)">Parcourez les films, séries et chaînes en direct.</small></div></div>`}
- else{const a=k==='h'?hist:list;t=k==='h'?'Historique de visionnage':'Ma liste';b=a.length?a.map(x=>`<div class="li" onclick="detail('${x.t}',${x.id})"><div class="pc" style="width:78px;height:96px">${im(x.p,'w185','',x.n)}<span class="pl s"></span></div><div><b>${x.n}</b><small>${x.y||''}</small><span class="stars">${stars(x.v)}</span></div></div>`).join(''):'<p class="rt" style="max-width:none">Rien ici pour le moment.</p>'}
+ else{const a=k==='h'?hist:k==='k'?likes:list;t=k==='h'?'Historique de visionnage':k==='k'?"Mes j'aime":'Ma liste';b=a.length?a.map(x=>`<div class="li" onclick="detail('${x.t}',${x.id})"><div class="pc" style="width:78px;height:96px">${im(x.p,'w185','',x.n)}<span class="pl s"></span></div><div><b>${x.n}</b><small>${x.y||''}</small><span class="stars">${stars(x.v)}</span></div></div>`).join(''):'<p class="rt" style="max-width:none">Rien ici pour le moment.</p>'}
  $('#s19').innerHTML=`<div class="hb"><button class="bk" onclick="go('s12')" aria-label="Retour">‹</button><b>${t}</b><span></span></div>`+b;go('s19')}
-/* ===== Lecture : Syrix via proxy serveur, sinon bande-annonce TMDB ===== */
-async function play(t,id){const d=await T(`/${t}/${id}`),title=d.title||d.name;rec(t,id,d);$('#pl').style.display='flex';$('#plc').innerHTML='<p>Recherche de la source…</p>';
- try{const s=await(await fetch(SYRIX_PROXY+'/search?q='+encodeURIComponent(title))).json();if(!s.success)throw 0;
-  const want=t==='movie'?['movie']:['series','drama','anime'],nm=x=>x.toLowerCase().replace(/[^a-z0-9]/g,'');
-  const h=s.data.find(x=>want.includes(x.type)&&nm(x.title)===nm(title))||s.data.find(x=>want.includes(x.type));if(!h)throw 0;
-  const ty={movie:'movies',series:'series',anime:'anime',drama:'dramas'}[h.type],dt=(await(await fetch(`${SYRIX_PROXY}/${ty}/${h.slug}`)).json()).data,eps=dt.episodes||[];
-  window.SY={ty,slug:h.slug};
-  $('#plc').innerHTML=`<div id="pv"></div><div id="ps"></div>${eps.length>1?`<select class="gs" style="margin-top:10px" onchange="srv(this.value)">${eps.map(e=>`<option value="${e.episode_id}">${e.season?'S'+e.season+' ':''}Ép. ${e.number||''}</option>`).join('')}</select>`:''}<p style="margin-top:10px">${dt.title||title}</p>`;
-  await srv(eps[0]?eps[0].episode_id:dt.first_episode_id);return}catch(e){}
- trailer(t,id,title)}
-async function srv(ep){const {ty,slug}=SY;$('#pv').innerHTML='<p>Chargement…</p>';
- const u=ty==='movies'||ty==='series'?`${SYRIX_PROXY}/episodes/${ep}/servers`:`${SYRIX_PROXY}/${ty}/${slug}/servers?episode=${encodeURIComponent(ep)}`;
- try{const v=(await(await fetch(u)).json()).data;if(!v||!v.length)throw 0;window.SV=v;showSv(0)}catch(e){$('#pv').innerHTML='<p>Aucune source pour le moment.</p>'}}
+/* ===== Icônes (SVG) ===== */
+const ICO={play:'<svg class="ic2 fl" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg>',plus:'<svg class="ic2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',heart:'<svg class="ic2" viewBox="0 0 24 24"><path d="M12 21l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21z"/></svg>',dl:'<svg class="ic2" viewBox="0 0 24 24"><path d="M12 3v12M7 11l5 5 5-5M5 20h14"/></svg>'};
+const isLk=(t,id)=>likes.some(x=>x.id===id&&x.t===t);
+async function likeT(t,id){const i=likes.findIndex(x=>x.id===id&&x.t===t);let on;
+ if(i>=0){likes.splice(i,1);on=false}else{on=true;const c=window.CUR,d=(c&&c.id===id)?c.d:await T(`/${t}/${id}`);likes.push({id,t,n:d.title||d.name,p:d.poster_path,v:d.vote_average,y:(d.release_date||d.first_air_date||'').slice(0,4)})}
+ sv('hk',likes);document.querySelectorAll('.lkb').forEach(b=>b.classList.toggle('on',on));toast(on?"Ajouté à vos j'aime":"Retiré de vos j'aime")}
+function pact(){const c=window.CUR,e=$('#pa');if(!c||!e)return;e.innerHTML=`<div class="pact"><button class="btn sm g ib lkb ${isLk(c.t,c.id)?'on':''}" aria-label="J'aime" onclick="likeT('${c.t}',${c.id})">${ICO.heart}</button><button class="btn sm g ib" aria-label="Télécharger" onclick="dl('${c.t}',${c.id})">${ICO.dl}</button></div>`}
+
+/* ===== Lecture : Syrix via le relais /syrix, sinon bandes-annonces TMDB ===== */
+const nm=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+async function syJ(u){let r,j=null;try{r=await fetch(u)}catch(e){throw 'reseau'}try{j=await r.json()}catch(e){}if(!r.ok||!j||j.success===false)throw (j&&j.error&&j.error.code)||('http_'+r.status);return j}
+async function syFind(t,d){const want=t==='movie'?['movie']:['series','drama','anime'],names=[...new Set([d.title,d.name,d.original_title,d.original_name].filter(Boolean))];
+ for(const q of names){const s=await syJ(SYRIX_PROXY+'/search?q='+encodeURIComponent(q)),a=(Array.isArray(s.data)?s.data:(s.data&&(s.data.results||s.data.items))||[]).filter(x=>want.includes(x.type));
+  const exact=x=>names.some(n=>nm(x.title)===nm(n)),loose=x=>names.some(n=>{const p=nm(x.title),r=nm(n);return p.length>3&&r.length>3&&(p.includes(r)||r.includes(p))}),h=a.find(exact)||a.find(loose);
+  if(h){const ty={movie:'movies',series:'series',anime:'anime',drama:'dramas'}[h.type],dt=(await syJ(`${SYRIX_PROXY}/${ty}/${h.slug}`)).data||{};return{ty,slug:h.slug,dt}}}
+ throw 'nomatch'}
+async function syServers(ty,slug,ep){const u=ty==='movies'||ty==='series'?`${SYRIX_PROXY}/episodes/${ep}/servers`:`${SYRIX_PROXY}/${ty}/${slug}/servers?episode=${encodeURIComponent(ep)}`;const v=(await syJ(u)).data;const l=Array.isArray(v)?v.filter(x=>x&&x.server_link):[];if(!l.length)throw 'noservers';return l}
+async function play(t,id){const d=await T(`/${t}/${id}`),title=d.title||d.name;window.CUR={t,id,d};window.SV=null;rec(t,id,d);$('#pl').style.display='flex';$('#plc').innerHTML='<p>Recherche de la source…</p>';
+ let why='';
+ try{const m=await syFind(t,d),eps=m.dt.episodes||[];window.SY={ty:m.ty,slug:m.slug};
+  $('#plc').innerHTML=`<div id="pv"></div><div id="ps"></div><div id="pa"></div>${eps.length>1?`<select class="gs" style="margin-top:10px" onchange="srv(this.value)">${eps.map(e=>`<option value="${e.episode_id}">${e.season?'S'+e.season+' ':''}Ép. ${e.number||''}</option>`).join('')}</select>`:''}<p style="margin-top:10px">${m.dt.title||title}</p>`;
+  await srv(eps[0]?eps[0].episode_id:m.dt.first_episode_id,true);return}catch(e){why=String((e&&e.message)||e)}
+ trailer(t,id,title,why)}
+async function srv(ep,first){const {ty,slug}=SY;$('#pv').innerHTML='<p>Chargement…</p>';
+ try{if(!ep)throw 'noservers';window.SV=(await syServers(ty,slug,ep)).slice(0,5);showSv(0)}
+ catch(e){if(first)throw e;$('#pv').innerHTML='<p>Aucune source pour le moment.</p>';$('#ps').innerHTML=''}}
 const sb=(k,i,l)=>`<button class="btn sm ${k===i?'':'g'}" style="width:auto;padding:0 12px;margin:8px 6px 0 0" onclick="${l}">`;
 function showSv(i){const s=SV[i];$('#pv').innerHTML=s.server_type==='embed'?`<iframe src="${s.server_link}" allow="autoplay;fullscreen" allowfullscreen referrerpolicy="no-referrer" style="width:100%;aspect-ratio:16/9;border:0"></iframe>`:`<video src="${s.server_link}" controls playsinline style="width:100%"></video>`;
- $('#ps').innerHTML=SV.map((x,k)=>sb(k,i,`showSv(${k})`)+(x.server_name||'Serveur '+(k+1))+'</button>').join('')}
-async function trailer(t,id,title){const v=((await T(`/${t}/${id}/videos?include_video_language=fr,en,null`)).results||[]).filter(x=>x.site==='YouTube').sort((a,b)=>(b.type==='Trailer')-(a.type==='Trailer'));window.YT=v;
- $('#plc').innerHTML=v.length?`<div id="pv"></div><div id="ps"></div><p style="margin-top:12px">La lecture complète de « ${title} » n'est pas disponible pour le moment. Bande-annonce affichée.</p>`:`<p>Aucune source disponible pour « ${title} » pour le moment.</p>`;if(v.length)showYt(0)}
+ $('#ps').innerHTML=SV.map((x,k)=>sb(k,i,`showSv(${k})`)+'Lecteur '+(k+1)+'</button>').join('');pact()}
+async function trailer(t,id,title,why){const v=((await T(`/${t}/${id}/videos?include_video_language=fr,en,null`)).results||[]).filter(x=>x.site==='YouTube').sort((a,b)=>(b.type==='Trailer')-(a.type==='Trailer'));window.YT=v;
+ const R={no_key:'clé Syrix (SYRIX_KEY) absente sur le serveur',http_404:'relais /syrix introuvable (dossier api/ non déployé ?)',http_401:'clé Syrix refusée',http_403:'clé Syrix refusée',nomatch:'titre introuvable chez Syrix',noservers:'aucun lecteur disponible pour ce titre',reseau:'réseau indisponible'},
+ w=why?`<p style="margin-top:6px;font-size:11px;opacity:.7">Détail : ${R[why]||why}</p>`:'';
+ $('#plc').innerHTML=v.length?`<div id="pv"></div><div id="ps"></div><div id="pa"></div><p style="margin-top:12px">La lecture complète de « ${title} » n'est pas disponible pour le moment. Bande-annonce affichée.</p>${w}`:`<p>Aucune source disponible pour « ${title} » pour le moment.</p>${w}`;if(v.length)showYt(0)}
 function showYt(i){const x=YT[i];$('#pv').innerHTML=`<iframe src="https://www.youtube.com/embed/${x.key}?autoplay=1" allow="autoplay;fullscreen" allowfullscreen style="width:100%;aspect-ratio:16/9;border:0"></iframe>`;
- $('#ps').innerHTML=YT.slice(0,4).map((_,k)=>sb(k,i,`showYt(${k})`)+'Vidéo '+(k+1)+'</button>').join('')+`<a class="btn sm g" style="display:inline-block;padding:11px 12px;margin-top:8px" href="https://www.youtube.com/watch?v=${x.key}" target="_blank" rel="noopener">Ouvrir sur YouTube</a>`}
+ $('#ps').innerHTML=YT.slice(0,5).map((_,k)=>sb(k,i,`showYt(${k})`)+'Lecteur '+(k+1)+'</button>').join('')+`<a class="btn sm g" style="display:inline-block;padding:11px 12px;margin-top:8px" href="https://www.youtube.com/watch?v=${x.key}" target="_blank" rel="noopener">Ouvrir sur YouTube</a>`;pact()}
+async function dl(t,id){toast('Recherche du fichier…');
+ try{const c=window.CUR,d=(c&&c.id===id)?c.d:await T(`/${t}/${id}`);let f=(window.SV&&c&&c.id===id)?window.SV.find(x=>x.server_type!=='embed'):null;
+  if(!f){const m=await syFind(t,d),eps=m.dt.episodes||[],ep=eps[0]?eps[0].episode_id:m.dt.first_episode_id;if(!ep)throw 'noservers';f=(await syServers(m.ty,m.slug,ep)).find(x=>x.server_type!=='embed')}
+  if(!f)throw 'nofile';const a=document.createElement('a');a.href=f.server_link;a.download=(d.title||d.name||'video')+'.mp4';a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();toast('Téléchargement lancé')}
+ catch(e){toast(e==='nofile'?'Pas de fichier téléchargeable : lecteurs en streaming uniquement':'Téléchargement indisponible pour ce titre')}}
 function closePl(){$('#pl').style.display='none';$('#plc').innerHTML=''}
 
 /* ===== Thèmes / Paramètres ===== */
@@ -275,7 +299,7 @@ async function collage(){let u=[];
  u=u.slice(0,18);const c=[0,1,2].map(i=>u.filter((_,k)=>k%3===i));$('#col').innerHTML=c.map(a=>`<div class="col">${[...a,...a].map(s=>`<img src="${s}">`).join('')}</div>`).join('')}
 /* ===== Init ===== */
 collage();applyTheme();
-setTimeout(()=>{if(cur!=='s1')return;if(user.email){go('s11');toast('Content de vous revoir, '+user.name)}else go('s2')},2500);
+setTimeout(()=>{if(cur!=='s1')return;if(user.email||user.guest){go('s11');if(user.email)toast('Content de vous revoir, '+user.name)}else go('s2')},2500);
 
 /* ===== Aide / contact Prime Purge ===== */
 let hpT=0;
