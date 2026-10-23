@@ -1,7 +1,0 @@
-HE'S TV
-1. Ouvrir hestv/index.html dans le navigateur (films via TMDB).
-2. Lecture complète Syrix : cd hestv && SYRIX_KEY="votre-clé" node server.js puis http://localhost:3000
-PRIME PURGE (site vitrine + pages légales)
-Déployer le dossier primepurge sur Vercel. Voir les champs jaunes dans mentions-legales.html,
-ajouter RESEND_API_KEY (Vercel) et GA_ID (assets/site.js).
-Régénérer les clés TMDB et Syrix partagées dans le chat.
