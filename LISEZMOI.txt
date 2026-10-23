@@ -1,12 +1,13 @@
-PRIME PURGE + HE'S TV : projet unique sur Vercel
-Pages : / (accueil Prime Purge avec HE'S TV intégré), /tv (application plein écran), /cgu, /confidentialite, /cookies, /mentions-legales.
+HE'S TV (accueil) + Prime Purge (/prime) : projet unique sur Vercel
+Pages : / = application HE'S TV ; /prime = site Prime Purge (accessible depuis HE'S TV > Paramètres > À propos · Prime Purge, avec bouton Retour) ; /cgu, /confidentialite, /cookies, /mentions-legales.
+Le bouton ? (aide et message) de l'application se déplace au doigt.
 
-1. Déployer le CONTENU de ce dossier (index.html à la racine).
+1. Déployer le CONTENU de ce dossier (index.html à la racine, en gardant les dossiers assets/ et api/).
 2. Vercel > Settings > Environment Variables :
    - SYRIX_KEY = votre clé Syrix (relais /syrix/* via api/syrix.js)
-   - RESEND_API_KEY = clé Resend (formulaire de contact, api/contact.js) ; MAIL_FROM facultatif
+   - RESEND_API_KEY = facultatif. Sans elle, les formulaires ouvrent la messagerie de l'utilisateur (mailto) au lieu d'envoyer directement. MAIL_FROM facultatif.
    Puis Redeploy.
-3. Connexion Google (HE'S TV) : console.cloud.google.com > Identifiants > ID client OAuth (Application Web).
-   Origine JavaScript autorisée : https://he-s-tv.vercel.app . Copier l'ID client dans tv.html (GOOGLE_CLIENT_ID).
+3. Connexion Google : console.cloud.google.com > Identifiants > ID client OAuth (Application Web).
+   Origine JavaScript autorisée : https://he-s-tv.vercel.app . Copier l'ID client dans index.html (GOOGLE_CLIENT_ID).
 4. Régénérer les clés TMDB/Syrix partagées dans le chat.
 En local : SYRIX_KEY="..." node server.js
