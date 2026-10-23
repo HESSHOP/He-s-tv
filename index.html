@@ -1,7 +1,13 @@
 <!DOCTYPE html>
 <html lang="fr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>HE'S TV</title><link rel="canonical" href="https://he-s-tv.vercel.app/">
+<title>HE'S TV – Films et séries en streaming</title><link rel="canonical" href="https://he-s-tv.vercel.app/">
+<meta name="description" content="HE'S TV : films, séries et chaînes en direct dans votre navigateur. Affiches classées VF, VO ou JA, recherche avec suggestions.">
+<meta name="robots" content="index,follow,max-image-preview:large"><meta name="theme-color" content="#0e0e10">
+<link rel="icon" href="/assets/hestv-icon.svg" type="image/svg+xml"><link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" href="/assets/hestv-48.png" sizes="48x48" type="image/png"><link rel="icon" href="/assets/hestv-192.png" sizes="192x192" type="image/png"><link rel="apple-touch-icon" href="/assets/hestv-180.png"><link rel="manifest" href="/manifest.webmanifest">
+<meta property="og:type" content="website"><meta property="og:site_name" content="HE'S TV"><meta property="og:title" content="HE'S TV – Films et séries en streaming"><meta property="og:description" content="Films, séries et chaînes en direct dans votre navigateur."><meta property="og:url" content="https://he-s-tv.vercel.app/"><meta property="og:image" content="https://he-s-tv.vercel.app/assets/hestv-og.png"><meta property="og:locale" content="fr_FR">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="HE'S TV – Films et séries en streaming"><meta name="twitter:image" content="https://he-s-tv.vercel.app/assets/hestv-og.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://he-s-tv.vercel.app/#site","url":"https://he-s-tv.vercel.app/","name":"HE'S TV","alternateName":["HES TV","He's TV","HESTV"],"inLanguage":"fr","image":"https://he-s-tv.vercel.app/assets/hestv-512.png"},{"@type":"WebApplication","name":"HE'S TV","url":"https://he-s-tv.vercel.app/","applicationCategory":"EntertainmentApplication","operatingSystem":"Web","image":"https://he-s-tv.vercel.app/assets/hestv-512.png","description":"Application de films, séries et chaînes en direct dans le navigateur."}]}</script>
 <style>
 :root{--bg:#0e0e10;--card:#1a1a1e;--red:#d32f2f;--mut:#9a9a9f;--line:#2e2e33;--txt:#fff}
 *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
@@ -104,7 +110,18 @@ h3{font-size:16px;margin:16px 16px 8px}
 .ic2{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;vertical-align:-4px;margin-right:6px}.ic2.fl{fill:currentColor;stroke:none}
 .btn.ib{width:46px;padding:0;flex:none}.ib .ic2{margin:0;vertical-align:middle}.ib.on{color:var(--red)}.ib.on .ic2{fill:var(--red);stroke:var(--red)}
 .pact{display:flex;gap:8px;margin-top:10px}.pact .btn{margin:0}
-</style></head><body>
+
+.pc.chk,.wide.chk{display:none}
+.lg{position:absolute;top:6px;left:6px;z-index:3;background:#000b;color:#fff;font:700 10px/1 system-ui,sans-serif;font-style:normal;letter-spacing:.5px;padding:3px 6px;border-radius:4px;pointer-events:none}.lg:empty{display:none}
+.sg{margin:-4px 16px 8px;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}.sg:empty{display:none}.sg div{display:flex;justify-content:space-between;gap:10px;padding:11px 14px;font-size:14px;border-bottom:1px solid var(--line);cursor:pointer}.sg div:last-child{border:0}.sg small{color:var(--mut)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.pw{position:relative;width:100%;aspect-ratio:16/9;background:#000;overflow:hidden}.stg{position:absolute;inset:0}.stg iframe,.stg video{width:100%;height:100%;border:0;display:block}
+.wmk{position:absolute;top:8px;right:10px;z-index:5;pointer-events:none;opacity:.9}.wmk .logo{font-size:13px;gap:0}.wmk .logo span{text-shadow:0 1px 3px #000}
+.fsb{position:absolute;top:8px;left:8px;z-index:5;width:30px;height:30px;border-radius:8px;border:0;background:#000a;color:#fff;display:grid;place-items:center;cursor:pointer;padding:0}.fsb .ic2{margin:0;vertical-align:middle}
+.pw.fs{aspect-ratio:auto}.pw.fsx{position:fixed;inset:0;z-index:99;width:100vw;height:100vh;aspect-ratio:auto}
+.pw.fs .stg,.pw.fsx .stg{inset:auto;left:50%;top:50%;width:1200px;height:675px;transform:translate(-50%,-50%) scale(var(--k,1))}
+.pw.fs .wmk,.pw.fsx .wmk{top:14px;right:18px}.pw.fs .wmk .logo,.pw.fsx .wmk .logo{font-size:16px}
+</style></head><body><div class="sr"><h1>HE'S TV : films et séries en streaming</h1><p>HE'S TV réunit films, séries et chaînes en direct. Les affiches indiquent la langue : VF, VO ou JA. Recherche avec suggestions de titres.</p></div>
 <div id="app">
 <div id="screens"></div>
 <div class="nav" id="nav"><button class="nx" onclick="nextOb()">Suivant</button><button onclick="go('s6')">Passer ›</button></div>
@@ -187,7 +204,9 @@ function googleLogin(){if(!GOOGLE_CLIENT_ID){toast('Ajoutez votre GOOGLE_CLIENT_
 /* ===== Écrans principaux ===== */
 const stars=v=>{const n=Math.round((v||0)/2);return '★'.repeat(n)+'☆'.repeat(5-n)};
 const im=(p,s,c,a)=>p?`<img class="${c||''}" loading="lazy" decoding="async" alt="${(a||'').replace(/"/g,'')}" src="${IMG}${s}${p}" onerror="this.classList.add('bad')">`:'';
-const pc=(x,t)=>`<div class="pc" onclick="detail('${x.media_type&&x.media_type!=='person'?x.media_type:t}',${x.id})">${im(x.poster_path,'w342','',x.title||x.name)}<span class="pl s"></span></div>`;
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const LG={fr:'VF',en:'VO',ja:'JA'},lg=l=>l?(LG[l]||String(l).toUpperCase()):'';
+const pc=(x,t)=>{const ty=x.media_type&&x.media_type!=='person'?x.media_type:t;return `<div class="pc chk" data-t="${ty}" data-id="${x.id}" data-ti="${esc(x.title||x.name)}" data-o="${esc(x.original_title||x.original_name||'')}" onclick="detail('${ty}',${x.id})">${im(x.poster_path,'w342','',x.title||x.name)}<i class="lg">${lg(x.original_language)}</i><span class="pl s"></span></div>`};
 const sr=`<svg class="ic" viewBox="0 0 24 24" onclick="go('s14')"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg>`;
 const GEAR=`<svg class="ic" onclick="go('s17')" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>`;
 const hdr=()=>`<div class="hd">${logo()}<div style="display:flex;gap:16px">${sr}${GEAR}</div></div>`;
@@ -198,21 +217,21 @@ let HI=[],hk=0,pt='dl';
 async function home(t,g){const el=$(t==='tv'?'#s13':'#s11'),X='<div class="hero sk"></div><div class="rowx">'+'<div class="sk"></div>'.repeat(4)+'</div>';
  el.innerHTML=hdr()+`<div class="tabs"><button class="${t==='tv'?'a':''}" onclick="go('s13')">Séries</button><button class="${t==='movie'?'a':''}" onclick="go('s11')">Films</button>${t==='movie'?`<select class="gs" aria-label="Catégories" onchange="home('movie',this.value)"><option value="">Catégories ▾</option>${GEN.map(x=>`<option value="${x[1]}" ${x[1]==g?'selected':''}>${x[0]}</option>`).join('')}</select>`:''}</div><div id="h${t}">${X}</div>`;
  const [a,b]=await Promise.all([T(g?`/discover/movie?with_genres=${g}&sort_by=popularity.desc`:`/trending/${t}/week`),T(`/${t}/top_rated`)]);
- const r=(a.results||[]).filter(x=>x.poster_path),H=r.slice(0,5),ti=x=>x.title||x.name;
+ const r=(a.results||[]).filter(x=>x.poster_path),ti=x=>x.title||x.name,fl=await Promise.all(r.slice(0,14).map(x=>pool(()=>syHas(t,x)))),H=r.slice(0,14).filter((x,i)=>fl[i]).slice(0,5);
  if(!H.length){$('#h'+t).innerHTML=rt(`home('${t}','${g||''}')`);return}
  HI=H;hk=0;
- $('#h'+t).innerHTML=`<div class="hero" id="hero" onclick="detail('${t}',HI[hk].id)">${H.map((x,i)=>im(x.poster_path,'w780','hi'+(i?'':' on'),ti(x))).join('')}<b id="htt">${ti(H[0])}</b></div><div class="acts"><button class="btn sm w" onclick="play('${t}',HI[hk].id)">▶ Lire</button><button class="btn sm g" onclick="addL('${t}',HI[hk].id)">+ Ma liste</button></div><h3>Populaires</h3><div class="rowx">${r.slice(5).map(x=>pc(x,t)).join('')}</div><h3>Les mieux notés</h3><div class="rowx">${(b.results||[]).filter(x=>x.poster_path).map(x=>pc(x,t)).join('')}</div>`;
- catRows($('#h'+t));clearInterval(window.ht);window.ht=setInterval(()=>{hk=(hk+1)%H.length;document.querySelectorAll('#hero .hi').forEach((e,i)=>e.classList.toggle('on',i===hk));const h=$('#htt');if(h)h.textContent=ti(H[hk])},5000)}
+ $('#h'+t).innerHTML=`<div class="hero" id="hero" onclick="detail('${t}',HI[hk].id)">${H.map((x,i)=>im(x.poster_path,'w780','hi'+(i?'':' on'),ti(x))).join('')}<i class="lg" id="hlg">${lg(H[0].original_language)}</i><b id="htt">${ti(H[0])}</b></div><div class="acts"><button class="btn sm w" onclick="play('${t}',HI[hk].id)">${ICO.play}Lire</button><button class="btn sm g" onclick="addL('${t}',HI[hk].id)">${ICO.plus}Ma liste</button></div><h3>Populaires</h3><div class="rowx">${r.filter(x=>!H.includes(x)).map(x=>pc(x,t)).join('')}</div><h3>Les mieux notés</h3><div class="rowx">${(b.results||[]).filter(x=>x.poster_path).map(x=>pc(x,t)).join('')}</div>`;
+ catRows($('#h'+t));clearInterval(window.ht);window.ht=setInterval(()=>{hk=(hk+1)%H.length;document.querySelectorAll('#hero .hi').forEach((e,i)=>e.classList.toggle('on',i===hk));const h=$('#htt');if(h)h.textContent=ti(H[hk]);const g2=$('#hlg');if(g2)g2.textContent=lg(H[hk].original_language)},5000)}
 function search(){const el=$('#s14');if(el.dataset.i)return;el.dataset.i=1;
- el.innerHTML=`<div class="sb"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg><input id="q" placeholder="Rechercher films, séries…" aria-label="Rechercher"><svg class="ic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg></div><h3 id="qt">Films recommandés</h3><div class="grid" id="qg"></div>`;
- let to;$('#q').oninput=e=>{clearTimeout(to);to=setTimeout(()=>run(e.target.value),400)};run('')}
+ el.innerHTML=`<div class="sb"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg><input id="q" placeholder="Rechercher films, séries…" aria-label="Rechercher"><svg class="ic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg></div><div class="sg" id="sg"></div><h3 id="qt">Films recommandés</h3><div class="grid" id="qg"></div>`;
+ let to;$('#q').oninput=e=>{clearTimeout(to);to=setTimeout(()=>run(e.target.value),400);suggest(e.target.value)};$('#q').onkeydown=e=>{if(e.key==='Enter'){clearTimeout(to);$('#sg').innerHTML='';run(e.target.value)}};run('')}
 async function run(q){$('#qg').innerHTML='<div class="sk"></div>'.repeat(6);const d=q.length>1?await T('/search/multi?query='+encodeURIComponent(q)):await T('/movie/popular');const r=(d.results||[]).filter(x=>x.poster_path&&x.media_type!=='person');$('#qt').textContent=q.length>1?'Résultats':'Films recommandés';$('#qg').innerHTML=r.length?r.map(x=>pc(x,'movie')).join(''):'<p style="grid-column:1/-1;padding:20px 0;max-width:none">Aucun résultat.</p>'}
 async function news(){const el=$('#s16');el.innerHTML=hb('Nouveau','s11')+`<div class="sb" onclick="go('s14')"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg><input placeholder="Rechercher…" readonly aria-label="Rechercher"></div><h3>Tendances du jour</h3><div id="nl"><div class="sk" style="width:calc(100% - 32px);height:190px;margin:0 16px;aspect-ratio:auto"></div></div>`;
  const d=await T('/trending/all/day'),r=(d.results||[]).filter(x=>x.backdrop_path&&x.media_type!=='person');
- $('#nl').innerHTML=r.length?r.map(x=>{const n=x.title||x.name,v=x.vote_average||0;return `<div class="wide" onclick="detail('${x.media_type}',${x.id})"><div class="wi">${im(x.backdrop_path,'w780','',n)}<span class="pl"></span></div><div class="wm"><b>${n}</b> <span class="stars">${stars(v)}</span></div><div class="chips"><span>${(x.release_date||x.first_air_date||'').slice(0,4)}</span><span>${x.media_type==='tv'?'Série':'Film'}</span><span>★ ${v.toFixed(1)}</span></div><p class="ov">${x.overview||''}</p></div>`}).join(''):rt('news()')}
+ $('#nl').innerHTML=r.length?r.map(x=>{const n=x.title||x.name,v=x.vote_average||0;return `<div class="wide chk" data-t="${x.media_type}" data-id="${x.id}" data-ti="${esc(n)}" data-o="${esc(x.original_title||x.original_name||'')}" onclick="detail('${x.media_type}',${x.id})"><div class="wi">${im(x.backdrop_path,'w780','',n)}<i class="lg">${lg(x.original_language)}</i><span class="pl"></span></div><div class="wm"><b>${n}</b> <span class="stars">${stars(v)}</span></div><div class="chips"><span>${(x.release_date||x.first_air_date||'').slice(0,4)}</span><span>${x.media_type==='tv'?'Série':'Film'}</span><span>★ ${v.toFixed(1)}</span></div><p class="ov">${x.overview||''}</p></div>`}).join(''):rt('news()')}
 async function detail(t,id){go('s15');const el=$('#s15');el.innerHTML=hb('Stream TV','s11')+'<div class="hero sk"></div>';
  const [d,r]=await Promise.all([T(`/${t}/${id}`),T(`/${t}/${id}/recommendations`)]),n=d.title||d.name,m=d.runtime||(d.episode_run_time||[])[0];window.CUR={t,id,d};
- el.innerHTML=hb('Stream TV','s11')+`<div class="hero">${im(d.poster_path||d.backdrop_path,'w780','',n)}<b>${n||''}</b></div><div class="acts" style="margin-top:12px"><button class="btn sm w" onclick="play('${t}',${id})">${ICO.play}Lire</button><button class="btn sm g" onclick="addL('${t}',${id})">${ICO.plus}Ma liste</button><button class="btn sm g ib lkb ${isLk(t,id)?'on':''}" aria-label="J'aime" onclick="likeT('${t}',${id})">${ICO.heart}</button><button class="btn sm g ib" aria-label="Télécharger" onclick="dl('${t}',${id})">${ICO.dl}</button></div><div style="padding:12px 16px"><span class="stars">${stars(d.vote_average)}</span><div class="chips"><span>${(d.release_date||d.first_air_date||'').slice(0,4)}</span>${m?`<span>${Math.floor(m/60)?Math.floor(m/60)+' h ':''}${m%60} min</span>`:''}${(d.genres||[]).slice(0,3).map(g=>`<span>${g.name}</span>`).join('')}</div><p style="max-width:none;margin-top:8px">${d.overview||'Synopsis indisponible.'}</p></div><h3>Tendances</h3><div class="rowx">${(r.results||[]).filter(x=>x.poster_path).map(x=>pc(x,t)).join('')}</div>`;el.scrollTop=0;catRows(el)}
+ el.innerHTML=hb('Stream TV','s11')+`<div class="hero">${im(d.poster_path||d.backdrop_path,'w780','',n)}<i class="lg">${lg(d.original_language)}</i><b>${n||''}</b></div><div class="acts" style="margin-top:12px"><button class="btn sm w" onclick="play('${t}',${id})">${ICO.play}Lire</button><button class="btn sm g" onclick="addL('${t}',${id})">${ICO.plus}Ma liste</button><button class="btn sm g ib lkb ${isLk(t,id)?'on':''}" aria-label="J'aime" onclick="likeT('${t}',${id})">${ICO.heart}</button><button class="btn sm g ib" aria-label="Télécharger" onclick="dl('${t}',${id})">${ICO.dl}</button></div><div style="padding:12px 16px"><span class="stars">${stars(d.vote_average)}</span><div class="chips"><span>${(d.release_date||d.first_air_date||'').slice(0,4)}</span>${m?`<span>${Math.floor(m/60)?Math.floor(m/60)+' h ':''}${m%60} min</span>`:''}${(d.genres||[]).slice(0,3).map(g=>`<span>${g.name}</span>`).join('')}</div><p style="max-width:none;margin-top:8px">${d.overview||'Synopsis indisponible.'}</p></div><h3>Tendances</h3><div class="rowx">${(r.results||[]).filter(x=>x.poster_path).map(x=>pc(x,t)).join('')}</div>`;el.scrollTop=0;catRows(el)}
 async function addL(t,id){const d=await T(`/${t}/${id}`);if(!list.find(x=>x.id===id)){list.push({id,t,n:d.title||d.name,p:d.poster_path,v:d.vote_average,y:(d.release_date||d.first_air_date||'').slice(0,4)});try{localStorage.setItem('hl',JSON.stringify(list))}catch(e){}}toast('Ajouté à Ma liste ✓')}
 const CATS=[['K-Drama','/discover/tv?with_original_language=ko&with_genres=18&sort_by=popularity.desc','tv'],['Séries','/trending/tv/week','tv'],['Films','/trending/movie/week','movie'],['Horreur','/discover/movie?with_genres=27&sort_by=popularity.desc','movie'],['Hollywood','/discover/movie?with_original_language=en&sort_by=popularity.desc','movie'],['Bollywood','/discover/movie?with_original_language=hi&sort_by=popularity.desc','movie'],['Populaires films et séries','/trending/all/week','all']];
 const chipbar=`<div class="chipbar">${CATS.map((c,i)=>`<button onclick="document.getElementById('cat${i}').scrollIntoView({behavior:'smooth'})">${c[0]}</button>`).join('')}</div>`;
@@ -237,6 +256,46 @@ async function likeT(t,id){const i=likes.findIndex(x=>x.id===id&&x.t===t);let on
  sv('hk',likes);document.querySelectorAll('.lkb').forEach(b=>b.classList.toggle('on',on));toast(on?"Ajouté à vos j'aime":"Retiré de vos j'aime")}
 function pact(){const c=window.CUR,e=$('#pa');if(!c||!e)return;e.innerHTML=`<div class="pact"><button class="btn sm g ib lkb ${isLk(c.t,c.id)?'on':''}" aria-label="J'aime" onclick="likeT('${c.t}',${c.id})">${ICO.heart}</button><button class="btn sm g ib" aria-label="Télécharger" onclick="dl('${c.t}',${c.id})">${ICO.dl}</button></div>`}
 
+/* ===== Catalogue : uniquement ce qui existe chez Syrix ===== */
+const SYC=rd('hsy',{});let syS=0;
+async function syHas(t,x){const k=t+':'+x.id,c=SYC[k];if(c&&Date.now()-c[1]<864e5)return c[0];
+ try{await syFind(t,x);SYC[k]=[1,Date.now()]}catch(e){if(e==='nomatch')SYC[k]=[0,Date.now()];else return 1}
+ clearTimeout(syS);syS=setTimeout(()=>sv('hsy',SYC),800);return SYC[k][0]}
+const PQ=[];let pAct=0;
+function pump(){while(pAct<6&&PQ.length){const [f,r]=PQ.shift();pAct++;f().then(r,()=>r(1)).finally(()=>{pAct--;pump()})}}
+const pool=f=>new Promise(r=>{PQ.push([f,r]);pump()});
+function syClean(){document.querySelectorAll('.pc.chk:not([data-q]),.wide.chk:not([data-q])').forEach(el=>{el.dataset.q=1;const x={id:+el.dataset.id,title:el.dataset.ti,original_title:el.dataset.o};
+ pool(()=>syHas(el.dataset.t,x)).then(ok=>{if(ok){el.classList.remove('chk');return}const row=el.parentElement;el.remove();if(!row||row.querySelector('.pc,.wide,.sk'))return;
+  if(row.classList.contains('grid')||row.id==='nl'){row.innerHTML='<p style="grid-column:1/-1;padding:20px 0;max-width:none">Aucun titre disponible.</p>'}else{const h=row.previousElementSibling;if(h&&h.tagName==='H3')h.remove();row.remove()}})})}
+let moW;new MutationObserver(()=>{cancelAnimationFrame(moW);moW=requestAnimationFrame(syClean)}).observe($('#screens'),{childList:true,subtree:true});
+
+/* ===== Suggestions de recherche (titres qui commencent par la saisie) ===== */
+let sgT,sgN=0;
+function suggest(v){const box=$('#sg');clearTimeout(sgT);const q=v.trim();if(!q){box.innerHTML='';return}
+ sgT=setTimeout(async()=>{const n=++sgN,k=nm(q);if(!k)return;
+  const [tm,sy]=await Promise.all([T('/search/multi?query='+encodeURIComponent(q)),syJ(SYRIX_PROXY+'/search?q='+encodeURIComponent(q)).catch(()=>({data:[]}))]);
+  const names=x=>[x.title,x.name,x.original_title,x.original_name],cand=(tm.results||[]).filter(x=>x.media_type!=='person'&&names(x).some(s=>nm(s).startsWith(k))).slice(0,8);
+  const ok=await Promise.all(cand.map(x=>pool(()=>syHas(x.media_type,x))));if(n!==sgN)return;
+  const out=[],seen=new Set(),add=(ti,y)=>{const key=nm(ti);if(ti&&key.startsWith(k)&&!seen.has(key)){seen.add(key);out.push([ti,y||''])}};
+  cand.forEach((x,i)=>{if(ok[i])add(names(x).find(s=>s&&nm(s).startsWith(k)),(x.release_date||x.first_air_date||'').slice(0,4))});
+  (Array.isArray(sy.data)?sy.data:[]).forEach(x=>add(x.title,x.year));
+  box.innerHTML=out.slice(0,6).map(([ti,y])=>`<div data-v="${esc(ti)}" onclick="pickSg(this.dataset.v)"><span><b>${esc(ti.slice(0,q.length))}</b>${esc(ti.slice(q.length))}</span><small>${esc(y)}</small></div>`).join('')},250)}
+function pickSg(v){$('#q').value=v;$('#sg').innerHTML='';run(v)}
+
+/* ===== Lecteur : plein écran 1200x675 + logo ===== */
+const FSI='<svg class="ic2" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
+const stage=h=>`<div class="pw" id="pw"><div class="stg">${h}</div><span class="wmk">${logo()}</span><button class="fsb" type="button" onclick="fsT()" aria-label="Plein écran">${FSI}</button></div>`;
+const fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement;
+function fit(){const p=$('#pw');if(p)p.style.setProperty('--k',Math.min(p.clientWidth/1200,p.clientHeight/675)||1)}
+function fsT(){const p=$('#pw');if(!p)return;
+ if(fsEl()){(document.exitFullscreen||document.webkitExitFullscreen).call(document);return}
+ if(p.classList.contains('fsx')){p.classList.remove('fsx');fit();return}
+ const r=p.requestFullscreen||p.webkitRequestFullscreen;
+ if(!r){p.classList.add('fsx');fit();return}
+ Promise.resolve(r.call(p)).then(()=>{try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}}).catch(()=>{p.classList.add('fsx');fit()})}
+['fullscreenchange','webkitfullscreenchange'].forEach(e=>document.addEventListener(e,()=>{const p=$('#pw');if(p)p.classList.toggle('fs',!!fsEl());if(!fsEl()){try{screen.orientation.unlock()}catch(x){}}fit();setTimeout(fit,150)}));
+addEventListener('resize',fit);
+
 /* ===== Lecture : Syrix via le relais /syrix, sinon bandes-annonces TMDB ===== */
 const nm=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
 async function syJ(u){let r,j=null;try{r=await fetch(u)}catch(e){throw 'reseau'}try{j=await r.json()}catch(e){}if(!r.ok||!j||j.success===false)throw (j&&j.error&&j.error.code)||('http_'+r.status);return j}
@@ -256,13 +315,13 @@ async function srv(ep,first){const {ty,slug}=SY;$('#pv').innerHTML='<p>Chargemen
  try{if(!ep)throw 'noservers';window.SV=(await syServers(ty,slug,ep)).slice(0,5);showSv(0)}
  catch(e){if(first)throw e;$('#pv').innerHTML='<p>Aucune source pour le moment.</p>';$('#ps').innerHTML=''}}
 const sb=(k,i,l)=>`<button class="btn sm ${k===i?'':'g'}" style="width:auto;padding:0 12px;margin:8px 6px 0 0" onclick="${l}">`;
-function showSv(i){const s=SV[i];$('#pv').innerHTML=s.server_type==='embed'?`<iframe src="${s.server_link}" allow="autoplay;fullscreen" allowfullscreen referrerpolicy="no-referrer" style="width:100%;aspect-ratio:16/9;border:0"></iframe>`:`<video src="${s.server_link}" controls playsinline style="width:100%"></video>`;
+function showSv(i){const s=SV[i];$('#pv').innerHTML=stage(s.server_type==='embed'?`<iframe src="${s.server_link}" allow="autoplay;encrypted-media" referrerpolicy="no-referrer"></iframe>`:`<video src="${s.server_link}" controls controlslist="nofullscreen" playsinline></video>`);
  $('#ps').innerHTML=SV.map((x,k)=>sb(k,i,`showSv(${k})`)+'Lecteur '+(k+1)+'</button>').join('');pact()}
 async function trailer(t,id,title,why){const v=((await T(`/${t}/${id}/videos?include_video_language=fr,en,null`)).results||[]).filter(x=>x.site==='YouTube').sort((a,b)=>(b.type==='Trailer')-(a.type==='Trailer'));window.YT=v;
  const R={no_key:'clé Syrix (SYRIX_KEY) absente sur le serveur',http_404:'relais /syrix introuvable (dossier api/ non déployé ?)',http_401:'clé Syrix refusée',http_403:'clé Syrix refusée',nomatch:'titre introuvable chez Syrix',noservers:'aucun lecteur disponible pour ce titre',reseau:'réseau indisponible'},
  w=why?`<p style="margin-top:6px;font-size:11px;opacity:.7">Détail : ${R[why]||why}</p>`:'';
  $('#plc').innerHTML=v.length?`<div id="pv"></div><div id="ps"></div><div id="pa"></div><p style="margin-top:12px">La lecture complète de « ${title} » n'est pas disponible pour le moment. Bande-annonce affichée.</p>${w}`:`<p>Aucune source disponible pour « ${title} » pour le moment.</p>${w}`;if(v.length)showYt(0)}
-function showYt(i){const x=YT[i];$('#pv').innerHTML=`<iframe src="https://www.youtube.com/embed/${x.key}?autoplay=1" allow="autoplay;fullscreen" allowfullscreen style="width:100%;aspect-ratio:16/9;border:0"></iframe>`;
+function showYt(i){const x=YT[i];$('#pv').innerHTML=stage(`<iframe src="https://www.youtube.com/embed/${x.key}?autoplay=1&fs=0&rel=0&modestbranding=1" allow="autoplay;encrypted-media"></iframe>`);
  $('#ps').innerHTML=YT.slice(0,5).map((_,k)=>sb(k,i,`showYt(${k})`)+'Lecteur '+(k+1)+'</button>').join('')+`<a class="btn sm g" style="display:inline-block;padding:11px 12px;margin-top:8px" href="https://www.youtube.com/watch?v=${x.key}" target="_blank" rel="noopener">Ouvrir sur YouTube</a>`;pact()}
 async function dl(t,id){toast('Recherche du fichier…');
  try{const c=window.CUR,d=(c&&c.id===id)?c.d:await T(`/${t}/${id}`);let f=(window.SV&&c&&c.id===id)?window.SV.find(x=>x.server_type!=='embed'):null;
