@@ -1,8 +1,12 @@
-HE'S TV sur Vercel
+PRIME PURGE + HE'S TV : projet unique sur Vercel
+Pages : / (accueil Prime Purge avec HE'S TV intégré), /tv (application plein écran), /cgu, /confidentialite, /cookies, /mentions-legales.
+
 1. Déployer le CONTENU de ce dossier (index.html à la racine).
-2. Vercel > Settings > Environment Variables : SYRIX_KEY = votre clé Syrix. Puis Redeploy.
-   (Le dossier api/ et vercel.json relaient /syrix/* sans exposer la clé.)
-3. Connexion Google : console.cloud.google.com > APIs et services > Identifiants > ID client OAuth (Application Web).
-   Origines JavaScript autorisées : https://hesstv.vercel.app . Copier l'ID client dans index.html (GOOGLE_CLIENT_ID).
+2. Vercel > Settings > Environment Variables :
+   - SYRIX_KEY = votre clé Syrix (relais /syrix/* via api/syrix.js)
+   - RESEND_API_KEY = clé Resend (formulaire de contact, api/contact.js) ; MAIL_FROM facultatif
+   Puis Redeploy.
+3. Connexion Google (HE'S TV) : console.cloud.google.com > Identifiants > ID client OAuth (Application Web).
+   Origine JavaScript autorisée : https://he-s-tv.vercel.app . Copier l'ID client dans tv.html (GOOGLE_CLIENT_ID).
 4. Régénérer les clés TMDB/Syrix partagées dans le chat.
 En local : SYRIX_KEY="..." node server.js
