@@ -1,0 +1,8 @@
+HE'S TV sur Vercel
+1. Déployer le CONTENU de ce dossier (index.html à la racine).
+2. Vercel > Settings > Environment Variables : SYRIX_KEY = votre clé Syrix. Puis Redeploy.
+   (Le dossier api/ et vercel.json relaient /syrix/* sans exposer la clé.)
+3. Connexion Google : console.cloud.google.com > APIs et services > Identifiants > ID client OAuth (Application Web).
+   Origines JavaScript autorisées : https://hesstv.vercel.app . Copier l'ID client dans index.html (GOOGLE_CLIENT_ID).
+4. Régénérer les clés TMDB/Syrix partagées dans le chat.
+En local : SYRIX_KEY="..." node server.js
