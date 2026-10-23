@@ -20,4 +20,4 @@ chk(E.consent,"Cochez la case pour continuer.",!E.consent.checked);
 if(!ok){e.preventDefault();return}
 if(!window.fetch)return;e.preventDefault();var b=f.querySelector("button[type=submit]");b.disabled=true;
 fetch("/api/contact",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({name:E.name.value,email:E.email.value,message:E.message.value,consent:"on",website:E.website.value,t:E.t.value})})
-.then(function(r){return r.json()}).then(function(j){if(j.ok)location.href="/merci";else throw 0}).catch(function(){b.disabled=false;document.getElementById("form-e").textContent="Envoi impossible. Écrivez-nous à primepurgetech@gmail.com."})})})();
+.then(function(r){return r.json()}).then(function(j){if(j.ok)location.href="/merci";else throw 0}).catch(function(){b.disabled=false;document.getElementById("form-e").textContent="Envoi direct indisponible : votre messagerie s'ouvre pour envoyer le message.";location.href="mailto:primepurgetech@gmail.com?subject="+encodeURIComponent("Message du site : "+E.name.value)+"&body="+encodeURIComponent(E.message.value+"\n\n"+E.name.value+" ("+E.email.value+")")})})})();
