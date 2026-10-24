@@ -367,22 +367,30 @@ function settings(){$('#s17').innerHTML=`<div class="hd"><button class="back" st
 <div class="seg"><button class="${cfg.mode==='dark'?'a':''}" onclick="setMode('dark')">🌙 Sombre</button><button class="${cfg.mode==='light'?'a':''}" onclick="setMode('light')">☀️ Clair</button></div>
 <h3>Lecture</h3>${tg('auto','Lecture automatique')}${tg('sub','Sous-titres')}${tg('notif','Notifications')}
 <h3>Compte</h3><div class="it">Profil <span>${user.name} ›</span></div><div class="it">Langue <span>Français ›</span></div><div class="it">Qualité vidéo <span>Auto ›</span></div><div class="it" onclick="location.href='/prime'">À propos · Prime Purge <span>›</span></div><div class="it" onclick="logout()" style="color:var(--red)">Se déconnecter</div><p style="padding:14px;text-align:center;max-width:none;font-size:12px">HE'S TV v1.2</p>`}
-/* ===== Chaînes en direct : iptv-org (principale) + Vavoo (secours), recherche, filtre pays, lecteur 1200x675 plein écran ===== */
+/* ===== Chaînes en direct : iptv-org + Vavoo fusionnés, recherche, filtre catégories, lecteur 1200x675 plein écran ===== */
 const escV=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-let lc='Tous',VQ='',VCH=[],VGR=[],LIVE_SRC='iptv';
+let lc='Tous',VQ='',VCH=[],VGR=[];
+/* Format des chaînes : c[0]=id ("i12" = iptv, "v12" = vavoo), c[1]=nom, c[2]=groupe, c[3]=logo */
+const nk1=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
 async function iptvList(){try{const r=await fetch('/api/iptv?list=1&t='+Date.now());if(!r.ok)throw 0;const j=await r.json();
- const l=(j.channels||[]).map(x=>[x.name||'',x.group||'',x.logo||'',x.id]);
- if(!l.length)throw 0;return{l,g:(j.groups||[])}}catch(e){return null}}
+ const l=(j.channels||[]).map(x=>['i'+x.id,x.name||'',x.group||'',x.logo||'']);
+ return l.length?{l,g:(j.groups||[])}:null}catch(e){return null}}
 async function vavooList(){try{const r=await fetch('/vavoo?list=1&t='+Date.now());if(!r.ok)throw 0;const j=await r.json();
- const l=(j.channels||[]).map(x=>[x.name||'',x.group||'',x.logo||'',x.id]);
- if(!l.length)throw 0;return{l,g:(j.groups||[])}}catch(e){return null}}
-async function liveList(){const c=rd('vvl',null);
- if(c&&c.t&&Array.isArray(c.l)&&c.l.length&&Date.now()-c.t<3600000){VCH=c.l;VGR=c.g||[];LIVE_SRC=c.s||'iptv';return true}
- let r=await iptvList();
- if(!r)r=await vavooList();
- if(!r)return false;
- LIVE_SRC=r===null?'vavoo':(r.l&&r.l.length?LIVE_SRC:'vavoo');
- VCH=r.l;VGR=r.g;sv('vvl',{t:Date.now(),l:VCH,g:VGR,s:LIVE_SRC});return true}
+ const l=(j.channels||[]).map(x=>['v'+x.id,x.name||'',x.group||'',x.logo||'']);
+ return l.length?{l,g:(j.groups||[])}:null}catch(e){return null}}
+async function liveList(){
+ /* Purge de l'ancien cache (ancien format : id numérique en position 3) */
+ const old=rd('vvl',null);if(old&&old.l&&old.l.length&&typeof old.l[0][3]==='number'){try{localStorage.removeItem('vvl')}catch(e){}}
+ const [a,b]=await Promise.all([iptvList(),vavooList()]);
+ if(!a&&!b)return false;
+ const ga=new Set((a&&a.g)||[]),gb=new Set((b&&b.g)||[]);
+ VGR=[...new Set([...ga,...gb])].filter(Boolean);
+ /* Fusion : Vavoo gagne s'il a la même chaîne (résolution plus fiable), puis iptv-org complète */
+ const seen=new Set();VCH=[];
+ (b?b.l:[]).forEach(c=>{const k=nk1(c[1]);if(!k||seen.has(k))return;seen.add(k);VCH.push(c)});
+ (a?a.l:[]).forEach(c=>{const k=nk1(c[1]);if(!k||seen.has(k))return;seen.add(k);VCH.push(c)});
+ sv('vvl',{t:Date.now(),l:VCH,g:VGR});
+ return VCH.length>0}
 function chips(){const e=$('#lgr');if(e)e.innerHTML=['Tous',...VGR].map((g,i)=>`<button class="${g===lc?'a':''}" onclick="pickG(${i-1})">${escV(g)}</button>`).join('')}
 function pickG(i){lc=i<0?'Tous':VGR[i];chips();drawV()}
 async function live(){stopLive();
@@ -392,28 +400,34 @@ async function live(){stopLive();
  if(!ok){$('#lp').innerHTML='<div style="aspect-ratio:16/9;display:grid;place-items:center;color:var(--mut);font-size:13px">—</div>';$('#vlist').innerHTML='<p class="rt" style="max-width:none">Chaînes indisponibles pour le moment. Réessayez plus tard.</p>';return}
  chips();catChips();$('#lp').innerHTML='';
  drawV()}
-const CATL=['Dessins animés','Documentaires','Films & séries','Sport','Infos','Musique','Religion','Autres'];
-const CRX=[['Dessins animés',/disney|cartoon|nick|\bkids?\b|kika|boomerang|junior|toon|baby ?tv|tiji|gulli|piwi|anime|cbeebies|cbbc|boing|dessin|enfant|jeunesse|zouzous|ketnet|tfou|canal j|infantil|children|sprout|\bduck/i],
-['Sport',/sport|dazn|espn|bein|tennis|golf|\bfoot|soccer|fussball|fight|ufc|wwe|racing|motor|olymp|\bnba\b|\bnfl\b|\bnhl\b|\bmlb\b|\bf1\b|boxing|stadium|laliga|ligue 1|premier league/i],
+const CATL=['Animés','Jeunesse','Novelas & Séries','Rire & Comédie','Action','Gabon','Sport','Infos','Documentaires','Films & séries','Musique','Religion','Autres'];
+const CRX=[['Animés',/cartoon|nick\b|nickelodeon|gulli|piwi|télétoon|teletoon|boomerang|toon|cartoonito|disney|j-?one|game ?one|mangas|anime|zouzous|tfou|canal ?j|kika|cbeebies|cbbc|boing|tiji|baby ?tv|junior|dessin/i],
+['Action',/action|hits action|thriller|\bwar\b|guerre|combat/i],
+['Novelas & Séries',/novela|telenovela|novelas ?tv|serie|max séries|drama|telemundo|romance/i],
+['Rire & Comédie',/com[eé]die|comedie|comedy|rire|funny|humour|stand-?up/i],
+['Gabon',/gabon|rts ?1|antenne ?a\b|tv\+|ntv ?gabon|akwaba|digitale ?3|b-?tv/i],
+['Sport',/sport|dazn|espn|bein|tennis|golf|\bfoot|soccer|fussball|fight|ufc|wwe|racing|motor|olymp|\bnba\b|\bnfl\b|\bnhl\b|\bf1\b|boxing|stadium|laliga|ligue 1|premier league/i],
+['Infos',/news|\binfos?\b|\bcnn\b|\bbbc\b|jazeera|france ?24|euronews|nachrichten|journal|actualite|\bdw\b|\bcgtn\b|bloomberg|cnbc|\bwelt\b|\bn24\b|tagesschau/i],
 ['Documentaires',/docu|discovery|geographic|nat ?geo|history|histoire|animal ?planet|planete|science|explor|smithsonian|investigation|voyage|travel|nature|wild|crime|viasat|\bdmax\b|\btlc\b|\bhgtv\b|terra|earth|cosmos/i],
-['Films & séries',/movie|cine|film|kino|hbo|showtime|starz|paramount|\bamc\b|\btcm\b|novela|serie|drama|action|horror|thriller|western|comedie|comedy|sundance|premiere|nollywood|bollywood|hollywood|lovelywood|\bsyfy\b|\bfx\b|\baxn\b|warner|romance|netflix/i],
-['Infos',/news|\binfos?\b|\bcnn\b|\bbbc\b|jazeera|france ?24|euronews|nachrichten|journal|actualite|\bdw\b|\bcgtn\b|\brt\b|bloomberg|cnbc|\bwelt\b|\bn24\b|tagesschau|politic|parliament/i],
-['Musique',/music|musik|\bmtv\b|vh1|\bhits?\b|radio|\btrace\b|mezzo|clubbing|\brock\b|\bpop\b|jazz|hip ?hop|\brap\b|4music|deluxe|vevo|\bnrj\b|melody|\bdance\b/i],
-['Religion',/church|christ|jesus|\bgod\b|islam|quran|coran|bible|gospel|3abn|\btbn\b|ecclesia|cathol|\bkto\b|eglise|prayer|sat ?7|\bhope\b|faith|mosqu|makkah|sunna|miracle|emmanuel|esaie|daystar|\bewtn\b|hillsong|salvation|\bnoor\b/i]];
+['Films & séries',/movie|cine|film|kino|hbo|showtime|starz|paramount|\bamc\b|\btcm\b|horror|western|sundance|premiere|bollywood|hollywood|\bsyfy\b|\bfx\b|\baxn\b|warner|netflix/i],
+['Jeunesse',/kids?|jeunesse|enfant|junior|family/i],
+['Musique',/music|musik|\bmtv\b|vh1|\bhits?\b|radio|\btrace\b|mezzo|clubbing|\brock\b|\bpop\b|jazz|hip ?hop|\brap\b|deluxe|vevo|\bnrj\b|\bdance\b/i],
+['Religion',/church|christ|jesus|\bgod\b|islam|quran|coran|bible|gospel|3abn|\btbn\b|cathol|\bkto\b|eglise|prayer|faith|makkah|sunna|\bnoor\b|\bewtn\b/i]];
 const CATC={};let cc='Toutes';
-function catOf(c){const k=c[3];if(CATC[k])return CATC[k];const n=String(c[0]||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');let r='Autres';for(const [l,x] of CRX){if(x.test(n)){r=l;break}}return CATC[k]=r}
+function catOf(c){const k=c[0];if(CATC[k])return CATC[k];const n=String(c[1]||'').toLowerCase();let r='Autres';for(const [l,x] of CRX){if(x.test(n)){r=l;break}}return CATC[k]=r}
 function catChips(){const e=$('#lcat');if(e)e.innerHTML=['Toutes',...CATL].map((g,i)=>`<button class="${g===cc?'a':''}" onclick="pickC(${i-1})">${escV(g)}</button>`).join('')}
 function pickC(i){cc=i<0?'Toutes':CATL[i];catChips();drawV()}
-function rowV(c){const ini=escV(c[0]).slice(0,2).toUpperCase();
- const vis=c[2]?`<img class="lgo" src="${escV(c[2])}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="lgE(this,'${ini}')">`:`<div class="cl">${ini}</div>`;
- return `<div class="li" onclick="watchUrl(${c[3]})"><div class="lw">${vis}<i class="lg">${escV(c[1])}</i></div><div style="flex:1;min-width:0"><b>${escV(c[0])}</b><small>${escV(catOf(c))}</small></div><button type="button" class="stb ${FAV.includes(c[3])?'on':''}" aria-label="Favori" onclick="event.stopPropagation();favT(${c[3]},this)">${STAR}</button></div>`}
+function rowV(c){const ini=escV(c[1]).slice(0,2).toUpperCase();
+ const vis=c[3]?`<img class="lgo" src="${escV(c[3])}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="lgE(this,'${ini}')">`:`<div class="cl">${ini}</div>`;
+ return `<div class="li" onclick="watchUrl('${c[0]}')"><div class="lw">${vis}<i class="lg">${escV(c[2])}</i></div><div style="flex:1;min-width:0"><b>${escV(c[1])}</b><small>${escV(catOf(c))}</small></div><button type="button" class="stb ${FAV.includes(c[0])?'on':''}" aria-label="Favori" onclick="event.stopPropagation();favT('${c[0]}',this)">${STAR}</button></div>`}
 function drawV(){const q=nm(VQ);
- const l=VCH.filter(c=>(lc==='Tous'||c[1]===lc)&&(!q||nm(c[0]).includes(q))&&(cc==='Toutes'||catOf(c)===cc));
- const srt=(x,y)=>String(x[0]).localeCompare(String(y[0]),'fr',{sensitivity:'base'});
+ const l=VCH.filter(c=>(lc==='Tous'||c[2]===lc)&&(!q||nm(c[1]).includes(q))&&(cc==='Toutes'||catOf(c)===cc));
+ const srt=(x,y)=>String(x[1]).localeCompare(String(y[1]),'fr',{sensitivity:'base'});
  let html='',flat=[];
  if(cc==='Toutes'){const g={};l.forEach(c=>{const k=catOf(c);(g[k]=g[k]||[]).push(c)});
-  CATL.forEach(k=>{if(g[k]){g[k].sort(srt);html+=`<h3 class="cth">${escV(k)} <small>${g[k].length}</small></h3>`+g[k].map(rowV).join('');g[k].forEach(c=>flat.push(c[3]))}})}
- else{l.sort(srt);html=l.map(rowV).join('');l.forEach(c=>flat.push(c[3]))}
+  CATL.forEach(k=>{if(g[k]){g[k].sort(srt);html+=`<h3 class="cth">${escV(k)} <small>${g[k].length}</small></h3>`+g[k].map(rowV).join('');g[k].forEach(c=>flat.push(c[0]))}});
+  if(g['Autres']){g['Autres'].sort(srt);html+=`<h3 class="cth">Autres <small>${g['Autres'].length}</small></h3>`+g['Autres'].map(rowV).join('');g['Autres'].forEach(c=>flat.push(c[0]))}}
+ else{l.sort(srt);html=l.map(rowV).join('');l.forEach(c=>flat.push(c[0]))}
  window.VL=flat;
  $('#vlist').innerHTML=flat.length?html:'<p class="rt" style="max-width:none">Aucune chaîne trouvée.</p>'}
 const STAR='<svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>';
@@ -434,21 +448,22 @@ function tryPlay(v){v.play().catch(()=>{v.muted=true;v.play().catch(()=>{});flas
 function mkVideo(){const v=document.createElement('video');v.id='vv';v.addEventListener('playing',()=>{const e=$('#lerr');if(e)e.style.display='none'});v.autoplay=true;v.playsInline=true;v.controls=false;v.disablePictureInPicture=true;v.setAttribute('controlslist','nodownload nofullscreen noplaybackrate');v.style.objectFit=FMT[fmi][0];v.addEventListener('contextmenu',e=>e.preventDefault());return v}
 function lgE(i,t){if(/^http:/.test(i.src)&&!i.dataset.r){i.dataset.r=1;i.src=i.src.replace(/^http:/,'https:');return}i.outerHTML='<div class="cl">'+t+'</div>'}
 function stripFill(){const s=document.getElementById('cstrip');if(!s)return;
- s.innerHTML=(window.VL||[]).map(id=>{const c=VCH.find(x=>x[3]===id);if(!c)return '';const ini=escV(c[0]).slice(0,2).toUpperCase();
-  const v=c[2]?`<img src="${escV(c[2])}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="lgE(this,'${ini}')">`:`<div class="cl">${ini}</div>`;
-  return `<button type="button" class="cs" data-id="${id}" aria-label="${escV(c[0])}" onclick="watchUrl(${id})">${v}</button>`}).join('')}
+ s.innerHTML=(window.VL||[]).map(id=>{const c=VCH.find(x=>x[0]===id);if(!c)return '';const ini=escV(c[1]).slice(0,2).toUpperCase();
+  const v=c[3]?`<img src="${escV(c[3])}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="lgE(this,'${ini}')">`:`<div class="cl">${ini}</div>`;
+  return `<button type="button" class="cs" data-id="${escV(id)}" aria-label="${escV(c[1])}" onclick="watchUrl('${escV(id)}')">${v}</button>`}).join('')}
 function markCur(){const s=document.getElementById('cstrip');if(!s)return;s.querySelectorAll('.cs.on').forEach(e=>e.classList.remove('on'));
  const e=s.querySelector('.cs[data-id="'+window.LCUR+'"]');if(e){e.classList.add('on');s.scrollTo({left:e.offsetLeft-s.clientWidth/2+e.offsetWidth/2})}}
 function liveUI(p){p.querySelector('.pi').insertAdjacentHTML('beforeend',`<div class="lerr" id="lerr"></div><div class="fl2" id="fl2"></div><div class="tbar"><button class="rb bkb" type="button" aria-label="Quitter le plein écran" onclick="fsT()">${LI.bk}</button><b id="ctt"></b></div><button class="rb cn l" type="button" aria-label="Chaîne précédente" onclick="chStep(-1)">${LI.pv}</button><button class="rb cn r" type="button" aria-label="Chaîne suivante" onclick="chStep(1)">${LI.nx}</button><div class="bbar"><div class="fmw"><button class="rb clb" type="button" aria-label="Fermer le lecteur" onclick="leaveLive()">${LI.cl}</button><span class="sp"></span><button class="rb" type="button" aria-label="Format d'écran" onclick="fmtCh()">${LI.fm}</button><button class="rb exb" type="button" aria-label="Agrandir" onclick="fsT()">${LI.ex}</button></div><div class="strip" id="cstrip"></div></div>`)}
-async function watchUrl(i){const c=VCH.find(x=>x[3]===i);if(!c)return;window.LCUR=i;
+async function watchUrl(i){const c=VCH.find(x=>x[0]===i);if(!c)return;window.LCUR=i;
  let p=P();
  if(!p||!$('#lp').contains(p)){$('#lp').innerHTML=stage('');p=P();p.classList.add('lvp');liveUI(p);const kk=$('#stk');if(kk)kk.classList.add('pin');window.SVL=null;
   p.addEventListener('pointerdown',()=>{showCc();const v=document.getElementById('vv');if(v&&v.muted)v.muted=false})}
  fit();
  stopLive();const v=mkVideo(),o=document.getElementById('vv');if(o)o.replaceWith(v);else p.querySelector('.stg').appendChild(v);
  if(window.SVL!==window.VL){window.SVL=window.VL;stripFill()}
- markCur();$('#ctt').textContent=c[0];$('#lerr').style.display='none';showCc();
- try{const r=await fetch((LIVE_SRC==='vavoo'?'/vavoo?id=':'/api/iptv?id=')+i+'&t='+Date.now());const j=await r.json();
+ markCur();$('#ctt').textContent=c[1];$('#lerr').style.display='none';showCc();
+ try{const src=String(i)[0]==='v'?'/vavoo?id=':'/api/iptv?id=';
+  const r=await fetch(src+encodeURIComponent(String(i).slice(1))+'&t='+Date.now());const j=await r.json();
   if(window.LCUR!==i)return;if(!j.url)throw 0;hlsInit(j.url)}
  catch(e){if(window.LCUR===i)lerr('Chaîne indisponible pour le moment.')}}
 function hlsInit(u){const v=document.getElementById('vv');if(!v)return;const id=window.LCUR;
