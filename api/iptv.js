@@ -5,7 +5,8 @@
 //   IPTV_SOURCES    liste de playlists séparées par des virgules (remplace les défauts)
 //   IPTV_MAX        nb max de chaînes francophones (défaut 900)
 //   IPTV_MAX_OTHER  nb max de chaînes des autres langues (défaut 1200) ; 0 = désactiver
-//   IPTV_BUDGET_MS  temps max de vérification des flux (défaut 45000)
+//   IPTV_BUDGET_MS  temps max de vérification des flux (défaut 15000). Les flux non vérifiés à temps sont quand même listés
+//                   (iptv-org teste déjà ses flux chaque jour) : la liste n'est jamais vide.
 
 const BASE = 'https://iptv-org.github.io/iptv/';
 const FR_SOURCES = [
@@ -75,22 +76,25 @@ const hashId = s => {
   return h.toString(36);
 };
 
-const getJSON = async (url, ms = 25000) => {
+const getJSON = async (url, ms = 15000) => {
   const r = await fetch(url, { signal: AbortSignal.timeout(ms) });
   if (!r.ok) throw new Error('http_' + r.status);
   return r.json();
 };
 
 // Base iptv-org : langues par chaîne (feeds.json) + meilleur logo par chaîne (logos.json). Cache 24 h.
-let db = { t: 0, ok: false, fra: new Set(), logos: new Map() };
+let db = { t: 0, ok: false, fra: new Set(), known: new Set(), logos: new Map() };
 async function loadDb() {
   if (db.t && Date.now() - db.t < 864e5) return db;
   const [feeds, logos] = await Promise.all([
     getJSON(DB + 'feeds.json').catch(() => null),
     getJSON(DB + 'logos.json').catch(() => null)
   ]);
-  const fra = new Set();
-  if (Array.isArray(feeds)) feeds.forEach(f => { if ((f.languages || []).includes('fra')) fra.add(f.channel); });
+  const fra = new Set(), known = new Set();
+  if (Array.isArray(feeds)) feeds.forEach(f => {
+    if ((f.languages || []).length) known.add(f.channel);
+    if ((f.languages || []).includes('fra')) fra.add(f.channel);
+  });
   // Même règle qu'iptv-org : PNG d'abord, puis JPEG, puis les autres, SVG en dernier ; taille proche de 512 px
   const level = { PNG: 3, JPEG: 2, APNG: 1, WebP: 1, AVIF: 1, GIF: 1, SVG: 0 };
   const score = l => (l.in_use ? 10 : 0) + (level[l.format] != null ? level[l.format] : 0) + (l.feed ? 0 : 0.5) - (Math.abs(512 - (l.width || 0)) + Math.abs(512 - (l.height || 0))) / 4096;
@@ -102,7 +106,7 @@ async function loadDb() {
   });
   const map = new Map();
   best.forEach((v, k) => map.set(k, v.url));
-  const next = { t: Date.now(), ok: fra.size > 0, fra, logos: map };
+  const next = { t: Date.now(), ok: fra.size > 0, fra, known, logos: map };
   if (fra.size || map.size) db = next; else db = { ...db, t: Date.now() - 864e5 + 6e5 }; // base injoignable : on réessaie dans 10 min
   return db;
 }
@@ -138,11 +142,13 @@ async function loadAll() {
   const custom = (process.env.IPTV_SOURCES || '').split(',').map(s => s.trim()).filter(Boolean);
   const maxOther = +(process.env.IPTV_MAX_OTHER === undefined ? 1200 : process.env.IPTV_MAX_OTHER);
   const urls = custom.length ? custom : [...FR_SOURCES, ...(maxOther > 0 ? OTHER_SOURCES : [])];
+  // La base (langues + logos, ~9 Mo) ne doit jamais bloquer la liste : au-delà de 6 s on continue sans elle
+  const dbQ = Promise.race([loadDb(), new Promise(r => setTimeout(() => r(db), 6000))]);
   const [d, plays] = await Promise.all([
-    loadDb(),
+    dbQ,
     Promise.all(urls.map(async u => {
       try {
-        const r = await fetch(u, { signal: AbortSignal.timeout(25000) });
+        const r = await fetch(u, { signal: AbortSignal.timeout(10000) });
         return r.ok ? parseM3U(await r.text()) : [];
       } catch (e) { return []; }
     }))
@@ -154,8 +160,10 @@ async function loadAll() {
     if (!c.name || FAKE_PAT.test(c.name) || /\bradio\b/i.test(c.name)) return;
     const base = (c.tvgId || '').split('@')[0];
     const tld = base.includes('.') ? base.split('.').pop().toLowerCase() : '';
+    // Langue connue dans la base : on s'y fie (évite les chaînes de la diaspora classées « françaises »).
+    // Sinon : pays francophone non mixte ; sans base du tout : pays ou nom typique.
     const isFr = d.ok
-      ? d.fra.has(base) || (FRA_TLDS.has(tld) && !MIXED.has(tld))
+      ? (d.known.has(base) ? d.fra.has(base) : FRA_TLDS.has(tld) && !MIXED.has(tld))
       : FRA_TLDS.has(tld) || FR_NAME_PAT.test(c.name);
     const key = normKey(c.name);
     if (!key) return;
@@ -172,7 +180,7 @@ async function loadAll() {
     byId.set(id, c.url);
     (isFr ? fr : other).push(c);
   });
-  all = { t: Date.now(), fr, other, byId };
+  all = { t: d.ok ? Date.now() : Date.now() - TTL + 6e5, fr, other, byId }; // base de langues absente : on recalcule dans 10 min
   return all;
 }
 
@@ -186,38 +194,40 @@ async function checkAlive(url) {
   } catch (e) { return false; }
 }
 
-// Vérifie les flux en parallèle (40 à la fois) jusqu'à `cap` chaînes vivantes ou la fin du temps imparti
+// Vérifie les flux en parallèle (80 à la fois) jusqu'à `cap` vivants ou la fin du temps imparti.
+// Retourne les flux vivants et ceux qui n'ont pas pu être vérifiés à temps (conservés, jamais perdus).
 async function aliveFilter(list, cap, deadline) {
-  const out = [];
+  const alive = [];
   let i = 0;
   const worker = async () => {
-    while (i < list.length && out.length < cap && Date.now() < deadline) {
+    while (i < list.length && alive.length < cap && Date.now() < deadline) {
       const c = list[i++];
-      if (await checkAlive(c.url)) out.push(c);
+      if (await checkAlive(c.url)) alive.push(c);
     }
   };
-  await Promise.all(Array.from({ length: 40 }, worker));
-  return out.slice(0, cap);
+  await Promise.all(Array.from({ length: 80 }, worker));
+  return { alive: alive.slice(0, cap), rest: alive.length >= cap ? [] : list.slice(i) };
 }
 
 let listCache = { t: 0, d: null };
 let building = null;
 async function buildList() {
   const a = await loadAll();
-  const budget = +(process.env.IPTV_BUDGET_MS || 45000), start = Date.now();
+  const budget = +(process.env.IPTV_BUDGET_MS || 15000), start = Date.now();
   const maxFr = +(process.env.IPTV_MAX || 900), maxOther = +(process.env.IPTV_MAX_OTHER === undefined ? 1200 : process.env.IPTV_MAX_OTHER);
   const byName = (x, y) => x.group.localeCompare(y.group, 'fr') || x.name.localeCompare(y.name, 'fr');
-  // Francophones d'abord (jusqu'aux deux tiers du temps), puis les autres langues avec le temps restant
-  const fr = (await aliveFilter(a.fr, maxFr, start + budget * 0.66)).sort(byName);
+  const pick = (r, cap) => [...r.alive.sort(byName), ...r.rest.slice(0, Math.max(0, cap - r.alive.length)).sort(byName)];
+  const fr = await aliveFilter(a.fr, maxFr, start + budget * 0.6);
   const oth = maxOther > 0
-    ? (await aliveFilter(a.other.slice().sort((x, y) => (y.logo ? 1 : 0) - (x.logo ? 1 : 0)), maxOther, start + budget)).sort(byName)
-    : [];
-  const list = [...fr, ...oth];
+    ? await aliveFilter(a.other.slice().sort((x, y) => (y.logo ? 1 : 0) - (x.logo ? 1 : 0)), maxOther, start + budget)
+    : { alive: [], rest: [] };
+  const list = [...pick(fr, maxFr), ...pick(oth, maxOther)];
   const d = {
     groups: [...new Set(list.map(c => c.group))].sort((x, y) => x.localeCompare(y, 'fr')),
     channels: list.map(c => ({ id: c.id, name: c.name, group: c.group, logo: c.logo, fr: c.fr }))
   };
-  listCache = { t: Date.now(), d };
+  // Liste vide ou réduite (réseau en panne) : on ne la garde que 5 min, sinon 6 h
+  listCache = { t: list.length > 50 ? Date.now() : Date.now() - TTL + 3e5, d };
   return d;
 }
 
