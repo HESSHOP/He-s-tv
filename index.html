@@ -8,7 +8,9 @@
 <meta property="og:type" content="website"><meta property="og:site_name" content="HE'S TV"><meta property="og:title" content="HE'S TV – Films et séries en streaming"><meta property="og:description" content="Films, séries et chaînes en direct dans votre navigateur."><meta property="og:url" content="https://he-s-tv.vercel.app/"><meta property="og:image" content="https://he-s-tv.vercel.app/assets/hestv-og.png"><meta property="og:locale" content="fr_FR">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="HE'S TV – Films et séries en streaming"><meta name="twitter:image" content="https://he-s-tv.vercel.app/assets/hestv-og.png">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://he-s-tv.vercel.app/#site","url":"https://he-s-tv.vercel.app/","name":"HE'S TV","alternateName":["HES TV","He's TV","HESTV"],"inLanguage":"fr","image":"https://he-s-tv.vercel.app/assets/hestv-512.png"},{"@type":"WebApplication","name":"HE'S TV","url":"https://he-s-tv.vercel.app/","applicationCategory":"EntertainmentApplication","operatingSystem":"Web","image":"https://he-s-tv.vercel.app/assets/hestv-512.png","description":"Application de films, séries et chaînes en direct dans le navigateur."}]}</script>
+<script>window.onerror=function(m,s,l,c){try{var d=document.createElement('div');d.style.cssText='position:fixed;left:0;right:0;top:0;z-index:99999;background:#b00020;color:#fff;font:16px/1.4 sans-serif;padding:10px 14px;white-space:pre-wrap';d.textContent='Erreur : '+m+' (ligne '+l+':'+c+')';(document.body||document.documentElement).appendChild(d)}catch(e){}};</script>
 <style>
+.scr,#pl,#hp,#gm,.pi,.stg,.pp,.hero .hi{top:0;right:0;bottom:0;left:0}
 :root{--bg:#0e0e10;--card:#1a1a1e;--red:#d32f2f;--mut:#9a9a9f;--line:#2e2e33;--txt:#fff}
 *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:#050505;font-family:system-ui,-apple-system,sans-serif;color:var(--txt);transition:background .4s}
@@ -230,7 +232,7 @@ S.push(`<section class="scr" id="s10"><button class="back" onclick="go('s7')">�
 S.push(`<section class="scr main" id="s11"></section><section class="scr main" id="s12"></section><section class="scr main" id="s13"></section><section class="scr main" id="s14"></section><section class="scr main" id="s15"></section><section class="scr main" id="s16"></section><section class="scr main" id="s17"></section><section class="scr main" id="s18"></section><section class="scr main" id="s19"></section>`);
 $('#screens').innerHTML=S.join('');
 /* ===== Navigation ===== */
-const rd=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const rd=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}},sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 let cur='s1',user=rd('hu',{name:'Invité'}),list=rd('hl',[]),likes=rd('hk',[]),hist=rd('hh',[]),accs=rd('hacc',{}),unread=rd('hun',1),cache={};
 function go(id){cur=id;if(id!=='s18')stopLive();clearInterval(window.ht);document.querySelectorAll('.scr').forEach(s=>s.classList.toggle('on',s.id===id));
  $('#nav').style.display=['s2','s3','s4','s5'].includes(id)?'flex':'none';
