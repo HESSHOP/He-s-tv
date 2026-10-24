@@ -596,8 +596,8 @@ function openPP(){
 }
 function closePP(){if(pnl)pnl.classList.remove('on')}
 window.openPP=openPP;window.closePP=closePP;
- /* 5. Bouton Programme : visible dès qu'une chaîne est en lecture */
- function ensureBtn(){
+/* 5. Bouton Programme : visible dès qu'une chaîne est en lecture */
+function ensureBtn(){
  const on=$('#ctt')&&$('#ctt').textContent.trim();
  let b=document.getElementById('pbtn');
  if(!b){b=document.createElement('button');b.className='pbtn';b.id='pbtn';b.type='button';b.textContent='Programme';b.onclick=openPP;$('#app').appendChild(b)}
@@ -618,5 +618,5 @@ document.addEventListener('keydown',e=>{
  else if(e.key==='Backspace'||e.key==='GoBack'||e.keyCode===461||e.keyCode===10009){if(pnl&&pnl.classList.contains('on')){e.preventDefault();closePP()}}
 });
 })();
-<script src="/duo-tv.js"></script>
-</script></body></html>
+</script>
+<script src="/duo-tv.js"></script></body></html>
