@@ -2,14 +2,32 @@
 //   VAVOO_INDEX_URL    (défaut: https://www2.vavoo.to/live2/index?countries=all&output=json)
 //   VAVOO_RESOLVE_URL  (défaut: https://vavoo.to/mediahubmx-resolve.json)
 //   VAVOO_UA           (défaut: okhttp/4.11.0)
-//   VAVOO_GROUPS       (filtre pays, ex: "France,Germany" — vide = tous)
-// Endpoints exposés :
+//   VAVOO_GROUPS       (laisser VIDE = tous les pays, inclut France + Gabon + Afrique)
+// Endpoints :
 //   /vavoo?list=1   -> catalogue {groups, channels:[{id,name,group,logo}]}
 //   /vavoo?id=<n>   -> résout la chaîne n -> {url:"/vavoo?u=..."} (m3u8 proxifié)
 //   /vavoo?u=<enc>  -> proxy HLS (User-Agent correct + réécriture des segments)
 const UA = () => process.env.VAVOO_UA || 'okhttp/4.11.0';
 const INDEX_URL = () => process.env.VAVOO_INDEX_URL || 'https://www2.vavoo.to/live2/index?countries=all&output=json';
 const RESOLVE_URL = () => process.env.VAVOO_RESOLVE_URL || 'https://vavoo.to/mediahubmx-resolve.json';
+
+const cleanName = s => {
+  let n = String(s || '').trim();
+  for (const r of [
+    /^\[?[A-Z]{2,3}\]?\s*[|•·\-]\s*/i,
+    /\s*[|•·]\s*[A-Z]{2,3}\s*$/i,
+    /\s*\((?:FR|FRA|France|Gabon|GA|HD|FHD|4K|SD)\)\s*$/i,
+    /\s+(?:HD|FHD|UHD|4K|SD|H265|HEVC|Back ?up)$/i,
+    /^\d+\s*[.\-]\s*/,
+    /[*✳✱]\s*$/
+  ]) n = n.replace(r, '');
+  return n.trim().replace(/\s+/g, ' ');
+};
+const normKey = n => n.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+
+// Priorité : 0 = francophone (France/Gabon/Afrique), 1 = autres
+const FR_PAT = /(france|gabon|afrique|ivoire|senegal|sénégal|cameroun|congo|mali|burkina|benin|bénin|togo|niger|guinee|guinée|tchad|r\.c\.a|rwanda|maroc|algerie|algérie|tunisie|canal\+ ?(o|j)|a\+|novela|antenne ?a|rts ?1|tv\+|tf1|m6\b|france ?[2-5]|gulli|c8|w9|tmc|6ter|bfm|cnews|lci|arte|rmc|nrj|cstar|rire|comedie|action|nickelodeon|cartoon|boomerang|disney|teletoon|piwi|eurosport|bein)/i;
+const prio = n => FR_PAT.test(String(n || '')) ? 0 : 1;
 
 let cat = { t: 0, d: null };
 
@@ -33,18 +51,22 @@ async function getCatalog() {
   if (!r.ok) throw new Error('index_' + r.status);
   const list = await r.json();
   if (!Array.isArray(list)) throw new Error('index_format');
+  // Filtre pays optionnel — laisser VIDE pour tout inclure (Gabon, A+, Action…)
   const filter = (process.env.VAVOO_GROUPS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-  const seen = new Set(), channels = [], groups = [];
+  const seen = new Set(), channels = [], groups = new Set();
   list.forEach(c => {
     if (!c || !c.name || !c.url) return;
     const g = String(c.group || 'Autres').trim();
     if (filter.length && !filter.includes(g.toLowerCase())) return;
     if (seen.has(c.url)) return;
     seen.add(c.url);
-    if (!groups.includes(g)) groups.push(g);
-    channels.push({ name: String(c.name).trim(), group: g, logo: c.logo || '', url: c.url });
+    groups.add(g);
+    channels.push({ name: cleanName(c.name), group: g, logo: c.logo || '', url: c.url, p: prio(c.name) });
   });
-  cat = { t: Date.now(), d: { groups: groups.sort(), channels } };
+  // Priorité francophone d'abord, puis ordre alphabétique
+  channels.sort((a, b) => a.p - b.p || a.name.localeCompare(b.name, 'fr'));
+  const d = { groups: [...groups].sort((a, b) => a.localeCompare(b, 'fr')), channels };
+  cat = { t: Date.now(), d };
   return cat.d;
 }
 
