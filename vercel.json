@@ -1,6 +1,9 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "functions": {
+    "api/iptv.js": {"maxDuration": 60}
+  },
   "rewrites": [
     {"source": "/syrix/:path*", "destination": "/api/syrix?p=:path*"},
     {"source": "/vavoo", "destination": "/api/vavoo"}
