@@ -8,7 +8,10 @@ const ls={g:k=>{try{return localStorage.getItem(k)}catch(e){return null}},s:(k,v
 const IS=(()=>{const f=new URLSearchParams(location.search).get('tv');
  if(f==='1')ls.s('htv','1');else if(f==='0')ls.s('htv','0');else if(f==='auto')ls.s('htv',null);
  const m=ls.g('htv');if(m==='1')return true;if(m==='0')return false;
- return /SMART-?TV|SmartTV|Tizen|Web0S|WebOS|NetCast|HbbTV|BRAVIA|VIDAA|Hisense|\bAFT[A-Z]+\b|CrKey|GoogleTV|Android ?TV|AppleTV|Roku|Viera|\bTV\b|Large ?Screen/i.test(navigator.userAgent)})();
+ const ua=navigator.userAgent;
+ if(/SMART-?TV|SmartTV|Tizen|Web0S|WebOS|NetCast|HbbTV|BRAVIA|VIDAA|Hisense|\bAFT[A-Z]+\b|CrKey|GoogleTV|Android ?TV|AppleTV|Roku|Viera|\bTV\b|Large ?Screen/i.test(ua))return true;
+ /* Box Android (ex. Dreamlink) : Android, pas « Mobile », pas d'écran tactile */
+ return /Android/i.test(ua)&&!/Mobile/i.test(ua)&&!(navigator.maxTouchPoints>0)})();
 window.IS_TV=IS;document.body.classList.toggle('tv',IS);document.body.classList.toggle('tvmode',IS);
 const tvk=()=>document.documentElement.style.setProperty('--tk',Math.max(.5,innerHeight/540));
 if(IS){tvk();addEventListener('resize',tvk)}
