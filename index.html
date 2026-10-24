@@ -148,6 +148,33 @@ h3{font-size:16px;margin:16px 16px 8px}
 .pw.lvp:not(.fs):not(.fsx) .tbar{padding:6px 100px 22px 10px}.pw.lvp:not(.fs):not(.fsx) .tbar b{font-size:14px}
 .pw.lvp:not(.fs):not(.fsx) .bbar{padding:18px 0 4px}.pw.lvp:not(.fs):not(.fsx) .fmw{padding:0 6px 0}
 .fmw .sp{flex:1}
+/* ===== Bandeau programme EN COURS + Panneau Programme + Mode TV ===== */
+.pg{position:absolute;left:0;right:0;bottom:0;z-index:30;padding:10px 14px;background:linear-gradient(0deg,#000e,#0000);display:none;align-items:center;gap:8px;font-size:12.5px}
+.pg .pgb{background:var(--red);color:#fff;font-weight:700;font-size:9.5px;padding:3px 7px;border-radius:4px;letter-spacing:.5px;flex:none;animation:bl 1.4s infinite}
+.pg .pgt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pg .pgh{color:var(--mut);flex:none;font-variant-numeric:tabular-nums}
+.pbtn{position:absolute;z-index:40;right:12px;bottom:64px;height:38px;padding:0 14px;border-radius:19px;border:0;background:var(--red);color:#fff;font:600 13px/38px system-ui,-apple-system,sans-serif;cursor:pointer;display:none;box-shadow:0 4px 14px #0008}
+.pbtn.on{display:block}
+.pp{position:absolute;inset:0;z-index:60;background:linear-gradient(180deg,#101014f2,#0a0a0cf7);backdrop-filter:blur(6px);display:flex;flex-direction:column;opacity:0;visibility:hidden;transform:translateX(24px);transition:.25s}
+.pp.on{opacity:1;visibility:visible;transform:none}
+.pph{display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid var(--line)}
+.pph b{font-size:17px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pph b small{display:block;font-size:11px;color:var(--mut);font-weight:400}
+.ppc{width:32px;height:32px;border-radius:50%;background:var(--card);border:0;color:var(--txt);font-size:18px;cursor:pointer;flex:none}
+.pil{flex:1;overflow-y:auto;padding:10px 14px 20px}
+.epi{display:flex;gap:10px;padding:10px 8px;border-radius:10px;align-items:baseline;border-bottom:1px solid #ffffff0d}
+.epi .ept{flex:none;width:88px;color:var(--mut);font-size:12.5px;font-variant-numeric:tabular-nums}
+.epi .epn{flex:1;font-size:14px;line-height:1.35;min-width:0;overflow-wrap:break-word}
+.epi.enow{background:#d32f2f1c}
+.epi.enow .ept,.epi.enow .epn{color:#fff;font-weight:700}
+.epi.enow .epn:before{content:'EN COURS ';font-size:9px;background:var(--red);padding:2px 6px;border-radius:4px;margin-right:6px;vertical-align:middle;letter-spacing:.5px}
+.epi.epast{opacity:.42}
+.epi.epe .epn{color:var(--mut);font-style:italic}
+.tvmode .pbtn{height:44px;font-size:15px;line-height:44px;bottom:80px;right:16px}
+.tvmode .pg{font-size:14px;padding:12px 18px}
+.tvmode .pph b{font-size:20px}.tvmode .epi .epn{font-size:16px}.tvmode .epi .ept{width:104px;font-size:14px}
+.tvmode .pil{padding:14px 22px 26px}
+.tvmode .epi{padding:14px 12px}
 </style></head><body><div class="sr"><h1>HE'S TV : films et séries en streaming</h1><p>HE'S TV réunit films, séries et chaînes en direct. Les affiches indiquent la langue : VF, VO ou JA. Recherche avec suggestions de titres.</p></div>
 <div id="app">
 <div id="screens"></div>
@@ -394,7 +421,7 @@ async function liveList(){
 function chips(){const e=$('#lgr');if(e)e.innerHTML=['Tous',...VGR].map((g,i)=>`<button class="${g===lc?'a':''}" onclick="pickG(${i-1})">${escV(g)}</button>`).join('')}
 function pickG(i){lc=i<0?'Tous':VGR[i];chips();drawV()}
 async function live(){stopLive();
- $('#s18').innerHTML=`<div class="stk" id="stk"><div class="hd"><b style="font-size:20px">Chaînes en direct</b><span class="lv">● EN DIRECT</span></div><div class="wide" id="lp" style="margin-top:8px"><div style="aspect-ratio:16/9;background:linear-gradient(135deg,var(--card),#000);display:grid;place-items:center;border-radius:12px;color:var(--mut);font-size:13px">Chargement des chaînes…</div></div></div><div class="chipbar" id="lgr"></div><div class="chipbar" id="lcat" style="padding-top:0"></div><div class="sb" style="margin-top:4px"><svg class="ic" viewBox="0 0 24 24" style="flex:none"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg><input id="vq" placeholder="Rechercher une chaîne…" aria-label="Rechercher une chaîne"></div><div id="vlist"></div>`;
+ $('#s18').innerHTML=`<div class="stk" id="stk"><div class="hd"><b style="font-size:20px">Chaînes en direct</b><span class="lv">● EN DIRECT</span></div><div class="wide" id="lp" style="margin-top:8px"><div style="aspect-ratio:16/9;background:linear-gradient(135deg,var(--card),#000);display:grid;place-items:center;border-radius:12px;color:var(--mut);font-size:13px">Chargement des chaînes…</div></div><div class="pg" id="pgband"><span class="pgb">EN COURS</span><span class="pgt" id="pgt">Programme indisponible</span><span class="pgh" id="pgh">--:--</span></div></div><div class="chipbar" id="lgr"></div><div class="chipbar" id="lcat" style="padding-top:0"></div><div class="sb" style="margin-top:4px"><svg class="ic" viewBox="0 0 24 24" style="flex:none"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg><input id="vq" placeholder="Rechercher une chaîne…" aria-label="Rechercher une chaîne"></div><div id="vlist"></div>`;
  $('#vq').oninput=e=>{VQ=e.target.value;drawV()};
  const ok=await liveList();
  if(!ok){$('#lp').innerHTML='<div style="aspect-ratio:16/9;display:grid;place-items:center;color:var(--mut);font-size:13px">—</div>';$('#vlist').innerHTML='<p class="rt" style="max-width:none">Chaînes indisponibles pour le moment. Réessayez plus tard.</p>';return}
@@ -462,6 +489,7 @@ async function watchUrl(i){const c=VCH.find(x=>x[0]===i);if(!c)return;window.LCU
  stopLive();const v=mkVideo(),o=document.getElementById('vv');if(o)o.replaceWith(v);else p.querySelector('.stg').appendChild(v);
  if(window.SVL!==window.VL){window.SVL=window.VL;stripFill()}
  markCur();$('#ctt').textContent=c[1];$('#lerr').style.display='none';showCc();
+ if(typeof pgLoad==='function')pgLoad(c[1]);
  try{const src=String(i)[0]==='v'?'/vavoo?id=':'/api/iptv?id=';
   const r=await fetch(src+encodeURIComponent(String(i).slice(1))+'&t='+Date.now());const j=await r.json();
   if(window.LCUR!==i)return;if(!j.url)throw 0;hlsInit(j.url)}
@@ -505,5 +533,89 @@ async function sendHp(){
  b.addEventListener('pointerup',e=>{if(!d)return;d=null;if(moved){try{localStorage.setItem('hbpos',JSON.stringify([parseFloat(b.style.left),parseFloat(b.style.top)]))}catch(x){}}else openHp()});
  b.addEventListener('pointercancel',()=>{d=null});
  addEventListener('resize',()=>{if(b.style.left)place(parseFloat(b.style.left),parseFloat(b.style.top))});
+})();
+/* ===== Extension : bandeau EN COURS + Panneau Programme + Mode TV auto ===== */
+(function(){
+'use strict';
+/* 1. Détection TV (télé -> mode TV, téléphone -> mode mobile) */
+if(typeof window.IS_TV==='undefined'){
+ const ua=navigator.userAgent||'';
+ window.IS_TV=/Tizen|Web0S|WebOS|SmartTV|SMART-TV|HbbTV|NetCast|BRAVIA|AFTB|AFTM|AFTT|Android TV|GoogleTV|CrKey|AppleTV|Apple TV|DTV-|SHIELD/i.test(ua)||(ua.includes('Android')&&!/Mobile|Tablet/i.test(ua));
+}
+if(window.IS_TV)document.body.classList.add('tvmode');
+/* 2. Heures ISO -> HH:MM */
+const e2h=x=>{try{const d=new Date(x);if(isNaN(d))return '--:--';return d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}catch(e){return '--:--'}};
+const eesc=s=>String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const NODISP='<div class="epi epe"><span class="ept">--:--</span><span class="epn">Programme indisponible</span></div>';
+/* 3. Bandeau bas : programme en cours */
+let pgName='',pgTimer=null;
+function pgFill(j){
+ const p=j&&j.prog;
+ if(!p||!p.title){$('#pgt').textContent='Programme indisponible';$('#pgh').textContent='--:--';return}
+ $('#pgt').textContent=p.title;
+ $('#pgh').textContent=(p.start&&p.stop)?(e2h(p.start)+' – '+e2h(p.stop)):'--:--';
+}
+function pgLoad(name){pgName=name||'';
+ const band=document.getElementById('pgband');if(band)band.style.display=pgName?'flex':'none';
+ if(!pgName)return;
+ clearTimeout(pgTimer);
+ $('#pgt').textContent='Programme indisponible';$('#pgh').textContent='--:--';
+ fetch('/api/epg?name='+encodeURIComponent(pgName)+'&t='+Date.now()).then(r=>r.json()).then(pgFill).catch(()=>{});
+ pgTimer=setInterval(()=>{if($('#pgt'))fetch('/api/epg?name='+encodeURIComponent(pgName)+'&t='+Date.now()).then(r=>r.json()).then(pgFill).catch(()=>{})},60000);
+}
+function pgHide(){const band=document.getElementById('pgband');if(band)band.style.display='none';clearTimeout(pgTimer);pgName=''}
+window.pgLoad=pgLoad;
+/* 4. Panneau Programme (journée complète) */
+let pnl=null;
+function progRows(j){
+ let list=j&&Array.isArray(j.list)?j.list:(j&&j.prog?[j.prog]:[]);
+ if(!list.length)return NODISP;
+ const now=Date.now();
+ return list.map(p=>{
+  const s=p.start?new Date(p.start).getTime():0,e=(p.stop||p.end)?new Date(p.stop||p.end).getTime():0;
+  const t=(s&&e)?(e2h(p.start)+' – '+e2h(p.stop||p.end)):'--:--';
+  const cls=(s&&e&&now>=s&&now<e)?'enow':(e&&now>=e?'epast':'');
+  const name=p.title||p.name||'';
+  if(!name)return NODISP;
+  return `<div class="epi ${cls}"><span class="ept">${t}</span><span class="epn">${eesc(name)}</span></div>`;
+ }).join('');
+}
+function loadPanel(){
+ const box=$('#epglist');if(!box)return;
+ box.innerHTML=NODISP;
+ if(!pgName)return;
+ fetch('/api/epg?name='+encodeURIComponent(pgName)+'&full=1&t='+Date.now()).then(r=>r.json()).then(j=>{box.innerHTML=progRows(j)}).catch(()=>{});
+}
+function openPP(){
+ if(!pgName)return;
+ if(!pnl){pnl=document.createElement('div');pnl.className='pp';pnl.id='ppnl';
+  pnl.innerHTML='<div class="pph"><b id="epghn"></b><button class="ppc" type="button" aria-label="Fermer" onclick="closePP()">✕</button></div><div class="pil" id="epglist"></div>';
+  $('#app').appendChild(pnl);}
+ $('#epghn').innerHTML=eesc(pgName)+'<small>Programme du jour</small>';
+ pnl.classList.add('on');loadPanel();
+}
+function closePP(){if(pnl)pnl.classList.remove('on')}
+window.openPP=openPP;window.closePP=closePP;
+/* 5. Bouton Programme : visible dès qu'une chaîne est en lecture */
+function ensureBtn(){
+ const on=$('#ctt')&&$('#ctt').textContent.trim();
+ let b=document.getElementById('pbtn');
+ if(!b){b=document.createElement('button');b.className='pbtn';b.id='pbtn';b.type='button';b.textContent='Programme';b.onclick=openPP;$('#app').appendChild(b)}
+ b.classList.toggle('on',!!on);
+}
+/* 6. Suivi de la chaîne courante (#ctt) : rafraîchit bandeau, bouton, panneau */
+let seenName='';
+setInterval(()=>{
+ const t=document.getElementById('ctt');
+ const n=t?t.textContent.trim():'';
+ if(n&&n!==seenName){seenName=n;pgLoad(n);ensureBtn();if(pnl&&pnl.classList.contains('on')){$('#epghn').innerHTML=eesc(n)+'<small>Programme du jour</small>';loadPanel()}}
+ if(!n&&seenName){seenName='';pgHide();ensureBtn()}
+},600);
+/* 7. Clavier télé : P = Programme, Retour = fermer le panneau */
+document.addEventListener('keydown',e=>{
+ if(/INPUT|TEXTAREA/.test(e.target.tagName))return;
+ if(e.key==='p'||e.key==='P'){if(pnl&&pnl.classList.contains('on'))closePP();else if(seenName)openPP()}
+ else if(e.key==='Backspace'||e.key==='GoBack'||e.keyCode===461||e.keyCode===10009){if(pnl&&pnl.classList.contains('on')){e.preventDefault();closePP()}}
+});
 })();
 </script></body></html>
