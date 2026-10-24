@@ -114,7 +114,7 @@ h3{font-size:16px;margin:16px 16px 8px}
 .pw.fs .wmk,.pw.fsx .wmk{top:14px;right:18px}.pw.fs .wmk .logo,.pw.fsx .wmk .logo{font-size:16px}
 .pi{position:absolute;inset:0}
 .pw.fsx{height:100dvh}
-.pw.lv .fsb{display:none}
+.pw.lvp .fsb{display:none}
 .rb{width:48px;height:48px;border:0;background:none;color:#fff;display:grid;place-items:center;padding:0;cursor:pointer;flex:none;filter:drop-shadow(0 2px 6px #000) drop-shadow(0 0 2px #000)}
 .rb .ic2{margin:0;width:30px;height:30px}
 .rb:active{opacity:.6}
@@ -132,19 +132,21 @@ h3{font-size:16px;margin:16px 16px 8px}
 .fsb{box-shadow:0 4px 14px #000,0 0 0 1px #fff2}
 .fl2{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:7;background:#000b;padding:6px 14px;border-radius:8px;font-size:12px;box-shadow:0 4px 14px #000;opacity:0;transition:opacity .3s;pointer-events:none}.fl2.on{opacity:1}
 .lerr{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);z-index:4;text-align:center;font-size:13px;padding:0 20px;text-shadow:0 2px 8px #000;display:none;pointer-events:none}
-#s18>*{flex:none}#stk{background:var(--bg)}#stk.pin{position:sticky;top:0;z-index:12;box-shadow:0 8px 14px -6px #000}
+#s18>*{flex:none}.fsp .tb,.fsp #hlpb{display:none!important}#lp.wide:empty{display:none}#stk{background:var(--bg)}#stk.pin{position:sticky;top:0;z-index:12;box-shadow:0 8px 14px -6px #000}
 #stk .hd{padding-bottom:4px}#lp.wide{margin:6px 16px 8px}#lp .pw{border-radius:12px}#lp .pw.fs,#lp .pw.fsx{border-radius:0}
 #vlist .li{padding:10px 16px;gap:14px;position:relative}#vlist .li:after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:1px;background:var(--line)}
 #vlist .li b{font-size:17px}#vlist .li small{font-size:13px}
+#vlist .lw{position:relative;flex:none}#vlist .lw .lg{top:-6px;left:-6px;max-width:calc(100% + 4px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cth{margin:16px 16px 2px;font-size:15px;color:var(--txt)}.cth small{color:var(--mut);font-size:12px;font-weight:400;margin-left:4px}
 #vlist .lgo{width:76px;height:52px;border-radius:10px;object-fit:contain;background:#fff;padding:3px;flex:none}#vlist .cl{width:76px;height:52px}
 .stb{background:none;border:0;color:var(--mut);padding:6px;flex:none;cursor:pointer}.stb svg{width:26px;height:26px;stroke:currentColor;stroke-width:1.8;fill:none}.stb.on{color:#f5a623}.stb.on svg{fill:#f5a623}
 #lp .pw{border-radius:12px}#lp .pw.fs,#lp .pw.fsx{border-radius:0}
-.pw.lv:not(.fs):not(.fsx) .bkb,.pw.lv:not(.fs):not(.fsx) .strip{display:none}
-.pw.lv.fs .clb,.pw.lv.fsx .clb,.pw.lv.fs .exb,.pw.lv.fsx .exb{display:none}
-.pw.lv:not(.fs):not(.fsx) .rb{width:38px;height:38px}.pw.lv:not(.fs):not(.fsx) .rb .ic2{width:24px;height:24px}
-.pw.lv:not(.fs):not(.fsx) .cn{width:48px;height:48px;top:calc(50% - 24px)}.pw.lv:not(.fs):not(.fsx) .cn .ic2{width:28px;height:28px}
-.pw.lv:not(.fs):not(.fsx) .tbar{padding:6px 100px 22px 10px}.pw.lv:not(.fs):not(.fsx) .tbar b{font-size:14px}
-.pw.lv:not(.fs):not(.fsx) .bbar{padding:18px 0 4px}.pw.lv:not(.fs):not(.fsx) .fmw{padding:0 6px 0}
+.pw.lvp:not(.fs):not(.fsx) .bkb,.pw.lvp:not(.fs):not(.fsx) .strip{display:none}
+.pw.lvp.fs .clb,.pw.lvp.fsx .clb,.pw.lvp.fs .exb,.pw.lvp.fsx .exb{display:none}
+.pw.lvp:not(.fs):not(.fsx) .rb{width:38px;height:38px}.pw.lvp:not(.fs):not(.fsx) .rb .ic2{width:24px;height:24px}
+.pw.lvp:not(.fs):not(.fsx) .cn{width:48px;height:48px;top:calc(50% - 24px)}.pw.lvp:not(.fs):not(.fsx) .cn .ic2{width:28px;height:28px}
+.pw.lvp:not(.fs):not(.fsx) .tbar{padding:6px 100px 22px 10px}.pw.lvp:not(.fs):not(.fsx) .tbar b{font-size:14px}
+.pw.lvp:not(.fs):not(.fsx) .bbar{padding:18px 0 4px}.pw.lvp:not(.fs):not(.fsx) .fmw{padding:0 6px 0}
 .fmw .sp{flex:1}
 </style></head><body><div class="sr"><h1>HE'S TV : films et séries en streaming</h1><p>HE'S TV réunit films, séries et chaînes en direct. Les affiches indiquent la langue : VF, VO ou JA. Recherche avec suggestions de titres.</p></div>
 <div id="app">
@@ -307,7 +309,7 @@ const FSI='<svg class="ic2" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15
 const stage=h=>`<div class="pw" id="pwr"><div class="pi"><div class="stg">${h}</div><span class="wmk">${logo()}</span><button class="fsb" type="button" onclick="fsT()" aria-label="Plein écran">${FSI}</button></div></div>`;
 const fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement;
 const P=()=>document.getElementById('pwr');
-function fit(){const p=P();if(!p)return;const pi=p.querySelector('.pi'),full=!!fsEl()||p.classList.contains('fsx');
+function fit(){const p=P();if(!p){document.body.classList.remove('fsp');return}const pi=p.querySelector('.pi'),full=!!fsEl()||p.classList.contains('fsx');document.body.classList.toggle('fsp',full);
  if(full&&innerHeight>innerWidth){pi.style.cssText='position:absolute;top:0;left:'+innerWidth+'px;width:'+innerHeight+'px;height:'+innerWidth+'px;transform-origin:0 0;transform:rotate(90deg)'}else pi.style.cssText='';
  p.style.setProperty('--k',Math.min(pi.clientWidth/1200,pi.clientHeight/675)||1)}
 function fsT(){const p=P();if(!p)return;
@@ -384,18 +386,36 @@ async function liveList(){const c=rd('vvl',null);
 function chips(){const e=$('#lgr');if(e)e.innerHTML=['Tous',...VGR].map((g,i)=>`<button class="${g===lc?'a':''}" onclick="pickG(${i-1})">${escV(g)}</button>`).join('')}
 function pickG(i){lc=i<0?'Tous':VGR[i];chips();drawV()}
 async function live(){stopLive();
- $('#s18').innerHTML=`<div class="stk" id="stk"><div class="hd"><b style="font-size:20px">Chaînes en direct</b><span class="lv">● EN DIRECT</span></div><div class="wide" id="lp" style="margin-top:8px"><div style="aspect-ratio:16/9;background:linear-gradient(135deg,var(--card),#000);display:grid;place-items:center;border-radius:12px;color:var(--mut);font-size:13px">Chargement des chaînes…</div></div></div><div class="chipbar" id="lgr"></div><div class="sb" style="margin-top:4px"><svg class="ic" viewBox="0 0 24 24" style="flex:none"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg><input id="vq" placeholder="Rechercher une chaîne…" aria-label="Rechercher une chaîne"></div><div id="vlist"></div>`;
+ $('#s18').innerHTML=`<div class="stk" id="stk"><div class="hd"><b style="font-size:20px">Chaînes en direct</b><span class="lv">● EN DIRECT</span></div><div class="wide" id="lp" style="margin-top:8px"><div style="aspect-ratio:16/9;background:linear-gradient(135deg,var(--card),#000);display:grid;place-items:center;border-radius:12px;color:var(--mut);font-size:13px">Chargement des chaînes…</div></div></div><div class="chipbar" id="lgr"></div><div class="chipbar" id="lcat" style="padding-top:0"></div><div class="sb" style="margin-top:4px"><svg class="ic" viewBox="0 0 24 24" style="flex:none"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg><input id="vq" placeholder="Rechercher une chaîne…" aria-label="Rechercher une chaîne"></div><div id="vlist"></div>`;
  $('#vq').oninput=e=>{VQ=e.target.value;drawV()};
  const ok=await liveList();
  if(!ok){$('#lp').innerHTML='<div style="aspect-ratio:16/9;display:grid;place-items:center;color:var(--mut);font-size:13px">—</div>';$('#vlist').innerHTML='<p class="rt" style="max-width:none">Chaînes indisponibles pour le moment. Réessayez plus tard.</p>';return}
- chips();
+ chips();catChips();$('#lp').innerHTML='';
  drawV()}
+const CATL=['Dessins animés','Documentaires','Films & séries','Sport','Infos','Musique','Religion','Autres'];
+const CRX=[['Dessins animés',/disney|cartoon|nick|\bkids?\b|kika|boomerang|junior|toon|baby ?tv|tiji|gulli|piwi|anime|cbeebies|cbbc|boing|dessin|enfant|jeunesse|zouzous|ketnet|tfou|canal j|infantil|children|sprout|\bduck/i],
+['Sport',/sport|dazn|espn|bein|tennis|golf|\bfoot|soccer|fussball|fight|ufc|wwe|racing|motor|olymp|\bnba\b|\bnfl\b|\bnhl\b|\bmlb\b|\bf1\b|boxing|stadium|laliga|ligue 1|premier league/i],
+['Documentaires',/docu|discovery|geographic|nat ?geo|history|histoire|animal ?planet|planete|science|explor|smithsonian|investigation|voyage|travel|nature|wild|crime|viasat|\bdmax\b|\btlc\b|\bhgtv\b|terra|earth|cosmos/i],
+['Films & séries',/movie|cine|film|kino|hbo|showtime|starz|paramount|\bamc\b|\btcm\b|novela|serie|drama|action|horror|thriller|western|comedie|comedy|sundance|premiere|nollywood|bollywood|hollywood|lovelywood|\bsyfy\b|\bfx\b|\baxn\b|warner|romance|netflix/i],
+['Infos',/news|\binfos?\b|\bcnn\b|\bbbc\b|jazeera|france ?24|euronews|nachrichten|journal|actualite|\bdw\b|\bcgtn\b|\brt\b|bloomberg|cnbc|\bwelt\b|\bn24\b|tagesschau|politic|parliament/i],
+['Musique',/music|musik|\bmtv\b|vh1|\bhits?\b|radio|\btrace\b|mezzo|clubbing|\brock\b|\bpop\b|jazz|hip ?hop|\brap\b|4music|deluxe|vevo|\bnrj\b|melody|\bdance\b/i],
+['Religion',/church|christ|jesus|\bgod\b|islam|quran|coran|bible|gospel|3abn|\btbn\b|ecclesia|cathol|\bkto\b|eglise|prayer|sat ?7|\bhope\b|faith|mosqu|makkah|sunna|miracle|emmanuel|esaie|daystar|\bewtn\b|hillsong|salvation|\bnoor\b/i]];
+const CATC={};let cc='Toutes';
+function catOf(c){const k=c[3];if(CATC[k])return CATC[k];const n=String(c[0]||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');let r='Autres';for(const [l,x] of CRX){if(x.test(n)){r=l;break}}return CATC[k]=r}
+function catChips(){const e=$('#lcat');if(e)e.innerHTML=['Toutes',...CATL].map((g,i)=>`<button class="${g===cc?'a':''}" onclick="pickC(${i-1})">${escV(g)}</button>`).join('')}
+function pickC(i){cc=i<0?'Toutes':CATL[i];catChips();drawV()}
+function rowV(c){const ini=escV(c[0]).slice(0,2).toUpperCase();
+ const vis=c[2]?`<img class="lgo" src="${escV(c[2])}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="lgE(this,'${ini}')">`:`<div class="cl">${ini}</div>`;
+ return `<div class="li" onclick="watchUrl(${c[3]})"><div class="lw">${vis}<i class="lg">${escV(c[1])}</i></div><div style="flex:1;min-width:0"><b>${escV(c[0])}</b><small>${escV(catOf(c))}</small></div><button type="button" class="stb ${FAV.includes(c[3])?'on':''}" aria-label="Favori" onclick="event.stopPropagation();favT(${c[3]},this)">${STAR}</button></div>`}
 function drawV(){const q=nm(VQ);
- const l=VCH.filter(c=>(lc==='Tous'||c[1]===lc)&&(!q||nm(c[0]).includes(q)));
- window.VL=l.map(c=>c[3]);
- $('#vlist').innerHTML=l.length?l.map(c=>{const ini=escV(c[0]).slice(0,2).toUpperCase();
-  const vis=c[2]?`<img class="lgo" src="${escV(c[2])}" alt="" loading="lazy" onerror="this.outerHTML='<div class=&quot;cl&quot;>${ini}</div>'">`:`<div class="cl">${ini}</div>`;
-  return `<div class="li" onclick="watchUrl(${c[3]})">${vis}<div style="flex:1;min-width:0"><b>${escV(c[0])}</b><small>${escV(c[1])}</small></div><button type="button" class="stb ${FAV.includes(c[3])?'on':''}" aria-label="Favori" onclick="event.stopPropagation();favT(${c[3]},this)">${STAR}</button></div>`}).join(''):'<p class="rt" style="max-width:none">Aucune chaîne trouvée.</p>'}
+ const l=VCH.filter(c=>(lc==='Tous'||c[1]===lc)&&(!q||nm(c[0]).includes(q))&&(cc==='Toutes'||catOf(c)===cc));
+ const srt=(x,y)=>String(x[0]).localeCompare(String(y[0]),'fr',{sensitivity:'base'});
+ let html='',flat=[];
+ if(cc==='Toutes'){const g={};l.forEach(c=>{const k=catOf(c);(g[k]=g[k]||[]).push(c)});
+  CATL.forEach(k=>{if(g[k]){g[k].sort(srt);html+=`<h3 class="cth">${escV(k)} <small>${g[k].length}</small></h3>`+g[k].map(rowV).join('');g[k].forEach(c=>flat.push(c[3]))}})}
+ else{l.sort(srt);html=l.map(rowV).join('');l.forEach(c=>flat.push(c[3]))}
+ window.VL=flat;
+ $('#vlist').innerHTML=flat.length?html:'<p class="rt" style="max-width:none">Aucune chaîne trouvée.</p>'}
 const STAR='<svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>';
 let FAV=rd('hfav',[]);
 function favT(id,b){const k=FAV.indexOf(id);if(k>=0)FAV.splice(k,1);else FAV.push(id);sv('hfav',FAV);b.classList.toggle('on',k<0)}
@@ -404,7 +424,7 @@ let HLS=null,ccT=0,flT=0,fmi=0;
 const FMT=[['contain','Ajusté'],['cover','Remplir'],['fill','Étiré']];
 const LI={bk:'<svg class="ic2" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',pv:'<svg class="ic2 fl" viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg>',nx:'<svg class="ic2 fl" viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg>',fm:'<svg class="ic2" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10v4M17 10v4"/></svg>',ex:FSI,cl:'<svg class="ic2" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>'};
 function stopLive(){if(HLS){try{HLS.destroy()}catch(e){}HLS=null}const v=document.getElementById('vv');if(v){try{v.pause();v.removeAttribute('src');v.load()}catch(e){}}}
-function leaveLive(){stopLive();clearTimeout(ccT);const kk=$('#stk');if(kk)kk.classList.remove('pin');const l=$('#lp');if(l)l.innerHTML='<div style="aspect-ratio:16/9;background:linear-gradient(135deg,var(--card),#000);display:grid;place-items:center;border-radius:12px;color:var(--mut);font-size:13px">Choisissez une chaîne</div>'}
+function leaveLive(){stopLive();document.body.classList.remove('fsp');clearTimeout(ccT);const kk=$('#stk');if(kk)kk.classList.remove('pin');const l=$('#lp');if(l)l.innerHTML=''}
 function showCc(){const p=P();if(!p)return;p.classList.remove('hid');clearTimeout(ccT);ccT=setTimeout(()=>p.classList.add('hid'),5000)}
 function flash(t){const e=$('#fl2');if(!e)return;e.textContent=t;e.classList.add('on');clearTimeout(flT);flT=setTimeout(()=>e.classList.remove('on'),1800)}
 function lerr(m){const e=$('#lerr');if(e){e.textContent=m;e.style.display='block'}}
@@ -412,16 +432,17 @@ function chStep(d){const L=window.VL||[];if(!L.length)return;let k=L.indexOf(win
 function fmtCh(){fmi=(fmi+1)%FMT.length;const v=document.getElementById('vv');if(v)v.style.objectFit=FMT[fmi][0];flash('Format : '+FMT[fmi][1]);showCc()}
 function tryPlay(v){v.play().catch(()=>{v.muted=true;v.play().catch(()=>{});flash('Touchez l\'écran pour activer le son')})}
 function mkVideo(){const v=document.createElement('video');v.id='vv';v.addEventListener('playing',()=>{const e=$('#lerr');if(e)e.style.display='none'});v.autoplay=true;v.playsInline=true;v.controls=false;v.disablePictureInPicture=true;v.setAttribute('controlslist','nodownload nofullscreen noplaybackrate');v.style.objectFit=FMT[fmi][0];v.addEventListener('contextmenu',e=>e.preventDefault());return v}
+function lgE(i,t){if(/^http:/.test(i.src)&&!i.dataset.r){i.dataset.r=1;i.src=i.src.replace(/^http:/,'https:');return}i.outerHTML='<div class="cl">'+t+'</div>'}
 function stripFill(){const s=document.getElementById('cstrip');if(!s)return;
  s.innerHTML=(window.VL||[]).map(id=>{const c=VCH.find(x=>x[3]===id);if(!c)return '';const ini=escV(c[0]).slice(0,2).toUpperCase();
-  const v=c[2]?`<img src="${escV(c[2])}" alt="" loading="lazy" decoding="async" onerror="this.outerHTML='<div class=&quot;cl&quot;>${ini}</div>'">`:`<div class="cl">${ini}</div>`;
+  const v=c[2]?`<img src="${escV(c[2])}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="lgE(this,'${ini}')">`:`<div class="cl">${ini}</div>`;
   return `<button type="button" class="cs" data-id="${id}" aria-label="${escV(c[0])}" onclick="watchUrl(${id})">${v}</button>`}).join('')}
 function markCur(){const s=document.getElementById('cstrip');if(!s)return;s.querySelectorAll('.cs.on').forEach(e=>e.classList.remove('on'));
  const e=s.querySelector('.cs[data-id="'+window.LCUR+'"]');if(e){e.classList.add('on');s.scrollTo({left:e.offsetLeft-s.clientWidth/2+e.offsetWidth/2})}}
 function liveUI(p){p.querySelector('.pi').insertAdjacentHTML('beforeend',`<div class="lerr" id="lerr"></div><div class="fl2" id="fl2"></div><div class="tbar"><button class="rb bkb" type="button" aria-label="Quitter le plein écran" onclick="fsT()">${LI.bk}</button><b id="ctt"></b></div><button class="rb cn l" type="button" aria-label="Chaîne précédente" onclick="chStep(-1)">${LI.pv}</button><button class="rb cn r" type="button" aria-label="Chaîne suivante" onclick="chStep(1)">${LI.nx}</button><div class="bbar"><div class="fmw"><button class="rb clb" type="button" aria-label="Fermer le lecteur" onclick="leaveLive()">${LI.cl}</button><span class="sp"></span><button class="rb" type="button" aria-label="Format d'écran" onclick="fmtCh()">${LI.fm}</button><button class="rb exb" type="button" aria-label="Agrandir" onclick="fsT()">${LI.ex}</button></div><div class="strip" id="cstrip"></div></div>`)}
 async function watchUrl(i){const c=VCH.find(x=>x[3]===i);if(!c)return;window.LCUR=i;
  let p=P();
- if(!p||!$('#lp').contains(p)){$('#lp').innerHTML=stage('');p=P();p.classList.add('lv');liveUI(p);const kk=$('#stk');if(kk)kk.classList.add('pin');window.SVL=null;
+ if(!p||!$('#lp').contains(p)){$('#lp').innerHTML=stage('');p=P();p.classList.add('lvp');liveUI(p);const kk=$('#stk');if(kk)kk.classList.add('pin');window.SVL=null;
   p.addEventListener('pointerdown',()=>{showCc();const v=document.getElementById('vv');if(v&&v.muted)v.muted=false})}
  fit();
  stopLive();const v=mkVideo(),o=document.getElementById('vv');if(o)o.replaceWith(v);else p.querySelector('.stg').appendChild(v);
