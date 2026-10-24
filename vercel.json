@@ -1,13 +1,29 @@
-{"cleanUrls":true,"trailingSlash":false,
-"rewrites":[{"source":"/syrix/:path*","destination":"/api/syrix?p=:path*"}],
-"headers":[
-{"source":"/(.*)","headers":[
-{"key":"Strict-Transport-Security","value":"max-age=63072000; includeSubDomains; preload"},{"key":"X-Content-Type-Options","value":"nosniff"},{"key":"X-Frame-Options","value":"DENY"},
-{"key":"Referrer-Policy","value":"strict-origin-when-cross-origin"},{"key":"Permissions-Policy","value":"camera=(), microphone=(), geolocation=()"}]},
-{"source":"/((?!index\\.html$).+)","headers":[
-{"key":"Content-Security-Policy","value":"default-src 'self'; script-src 'self' https://www.googletagmanager.com; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; img-src 'self' data: https://*.google-analytics.com https://*.googletagmanager.com; style-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"}]},
-{"source":"/","headers":[
-{"key":"Content-Security-Policy","value":"default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; connect-src 'self' https://api.themoviedb.org https://accounts.google.com; img-src 'self' data: https:; media-src 'self' https:; frame-src https:; base-uri 'self'; frame-ancestors 'none'"}]},
-{"source":"/index.html","headers":[
-{"key":"Content-Security-Policy","value":"default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; connect-src 'self' https://api.themoviedb.org https://accounts.google.com; img-src 'self' data: https:; media-src 'self' https:; frame-src https:; base-uri 'self'; frame-ancestors 'none'"}]},
-{"source":"/assets/(.*)","headers":[{"key":"Cache-Control","value":"public, max-age=31536000, immutable"}]}]}
+{
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    {"source": "/syrix/:path*", "destination": "/api/syrix?p=:path*"},
+    {"source": "/vavoo", "destination": "/api/vavoo"}
+  ],
+  "headers": [
+    {"source": "/(.*)", "headers": [
+      {"key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload"},
+      {"key": "X-Content-Type-Options", "value": "nosniff"},
+      {"key": "X-Frame-Options", "value": "DENY"},
+      {"key": "Referrer-Policy", "value": "strict-origin-when-cross-origin"},
+      {"key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()"}
+    ]},
+    {"source": "/((?!index\\.html$).+)", "headers": [
+      {"key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://www.googletagmanager.com; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; img-src 'self' data: https://*.google-analytics.com https://*.googletagmanager.com; style-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"}
+    ]},
+    {"source": "/", "headers": [
+      {"key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://accounts.google.com; connect-src 'self' https://api.themoviedb.org https://accounts.google.com https:; img-src 'self' data: https:; media-src 'self' https: blob:; frame-src https:; base-uri 'self'; frame-ancestors 'none'"}
+    ]},
+    {"source": "/index.html", "headers": [
+      {"key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://accounts.google.com; connect-src 'self' https://api.themoviedb.org https://accounts.google.com https:; img-src 'self' data: https:; media-src 'self' https: blob:; frame-src https:; base-uri 'self'; frame-ancestors 'none'"}
+    ]},
+    {"source": "/assets/(.*)", "headers": [
+      {"key": "Cache-Control", "value": "public, max-age=31536000, immutable"}
+    ]}
+  ]
+}

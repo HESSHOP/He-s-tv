@@ -345,9 +345,50 @@ function settings(){$('#s17').innerHTML=`<div class="hd"><button class="back" st
 <h3>Lecture</h3>${tg('auto','Lecture automatique')}${tg('sub','Sous-titres')}${tg('notif','Notifications')}
 <h3>Compte</h3><div class="it">Profil <span>${user.name} ›</span></div><div class="it">Langue <span>Français ›</span></div><div class="it">Qualité vidéo <span>Auto ›</span></div><div class="it" onclick="location.href='/prime'">À propos · Prime Purge <span>›</span></div><div class="it" onclick="logout()" style="color:var(--red)">Se déconnecter</div><p style="padding:14px;text-align:center;max-width:none;font-size:12px">HE'S TV v1.0</p>`}
 /* ===== Chaînes en direct (sources YouTube officielles, modifiables) ===== */
+/* ===== Chaînes en direct : sources YouTube officielles + API Vavoo ===== */
 const CH=[['France 24 (EN)','Actualités','UCQfwfsi5VrQ8yKZ-UWmAEFg','Journal en continu'],['Al Jazeera (EN)','Actualités','UCNye-wNBqNL5ZzHSJj3l8Bg','Actualités mondiales'],['Sky News','Actualités','UCoMdktPbSTixAyNGwb-UYkQ','Édition en direct'],['DW News','Actualités','UCknLrEdhRCp1aegoMqRaCZg','Le monde en direct'],['Euronews (EN)','Actualités','UCSrZ3UV4jOidv8ppoVuvW9Q','Info européenne']];
-let lc='Toutes';
-function live(){const cats=['Toutes','Actualités','Cinéma','Sport','Enfants','Musique'],L=CH.filter(c=>lc==='Toutes'||c[1]===lc);
+const VT='vvav'; /* clé localStorage du cache Vavoo */
+let lc='Toutes', VCH=[];
+async function vavooChans(){
+  try{
+    const c=rd(VT,[]);
+    if(c&&c.length&&Date.now()-c.t<21600000)return c.l; /* cache 6 h */
+    const r=await fetch('/vavoo');
+    if(!r.ok)throw 0;
+    const j=await r.json();
+    if(!Array.isArray(j)||!j.length)throw 0;
+    VCH=j.map((x,i)=>[(x.name||('Chaîne '+(i+1))).trim(),(x.group||'Live').replace(/bulgaria/i,'Bulgarie').trim(),x.url,x.group||'']);
+    sv(VT,{t:Date.now(),l:VCH});
+    return VCH;
+  }catch(e){return VCH}
+}
+const escV=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+async function live(){
+  const cats=['Toutes','Actualités','Cinéma','Sport','Enfants','Musique','Bulgarie'],L=CH.filter(c=>lc==='Toutes'||c[1]===lc);
+  $('#s18').innerHTML=`<div class="hd"><b style="font-size:20px">Chaînes en direct</b><span class="lv">● EN DIRECT</span></div><div class="tabs" style="overflow-x:auto">${cats.map(c=>`<button class="${c===lc?'a':''}" onclick="lc='${c}';live()">${c}</button>`).join('')}</div><div class="wide" id="lp" style="margin-top:8px"><div style="aspect-ratio:16/9;background:linear-gradient(135deg,var(--card),#000);display:grid;place-items:center;border-radius:12px;color:var(--mut);font-size:13px">Choisissez une chaîne ▶</div></div>`+
+  (L.length?L.map(c=>`<div class="li" onclick="watch(${CH.indexOf(c)})"><div class="cl">${c[0].split(' ').map(w=>w[0]).join('').slice(0,2)}</div><div style="flex:1"><b>${escV(c[0])}</b><small>${escV(c[3])}</small></div><span class="lv">● LIVE</span></div>`).join(''):'<p style="padding:30px 16px;max-width:none;text-align:center">Ces chaînes arrivent bientôt.</p>')+
+  `<div id="vsec" style="display:none"><h3 style="margin-top:18px">Chaînes live (Vavoo)</h3><div id="vlist"></div></div>`;
+  const v=await vavooChans();
+  const sec=$('#vsec');if(!sec)return;
+  const ok=lc==='Toutes'||lc==='Bulgarie';
+  if(!v.length||!ok)return;
+  sec.style.display='block';
+  $('#vlist').innerHTML=v.map((c,i)=>`<div class="li" onclick="watchUrl(${i})"><div class="cl">${escV(c[0]).slice(0,2).toUpperCase()}</div><div style="flex:1"><b>${escV(c[0])}</b><small>${escV(c[3])}</small></div><span class="lv">● LIVE</span></div>`).join('');
+}
+function watch(i){$('#lp').innerHTML=`<iframe src="https://www.youtube.com/embed/live_stream?channel=${CH[i][2]}&autoplay=1" allow="autoplay;fullscreen" allowfullscreen style="width:100%;aspect-ratio:16/9;border:0;border-radius:12px"></iframe>`;$('#s18').scrollTo({top:0,behavior:'smooth'})}
+function hlsInit(u){const v=document.getElementById('vv');
+  const go=()=>{const h=new Hls({lowLatencyMode:true});h.loadSource(u);h.attachMedia(v);v.play().catch(()=>{})};
+  if(window.Hls)return go();
+  const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/hls.js@1';s.onload=go;s.onerror=()=>{$('#lp').innerHTML='<p style="padding:20px;text-align:center;max-width:none">Lecteur HLS indisponible.</p>'};document.head.appendChild(s)}
+function watchUrl(i){const u=VCH[i]&&VCH[i][2];if(!u)return;
+  if(/\.m3u8($|\?)/i.test(u)||/playlist/i.test(u)){
+    $('#lp').innerHTML=`<video id="vv" controls autoplay playsinline style="width:100%;aspect-ratio:16/9;border:0;border-radius:12px;background:#000"></video>`;
+    hlsInit(u);
+  }else{
+    $('#lp').innerHTML=`<iframe src="${escV(u)}" allow="autoplay;fullscreen" allowfullscreen style="width:100%;aspect-ratio:16/9;border:0;border-radius:12px"></iframe>`;
+  }
+  $('#s18').scrollTo({top:0,behavior:'smooth'})}
+
  $('#s18').innerHTML=`<div class="hd"><b style="font-size:20px">Chaînes en direct</b><span class="lv">● EN DIRECT</span></div><div class="tabs" style="overflow-x:auto">${cats.map(c=>`<button class="${c===lc?'a':''}" onclick="lc='${c}';live()">${c}</button>`).join('')}</div><div class="wide" id="lp" style="margin-top:8px"><div style="aspect-ratio:16/9;background:linear-gradient(135deg,var(--card),#000);display:grid;place-items:center;border-radius:12px;color:var(--mut);font-size:13px">Choisissez une chaîne ▶</div></div>`+
  (L.length?L.map(c=>`<div class="li" onclick="watch(${CH.indexOf(c)})"><div class="cl">${c[0].split(' ').map(w=>w[0]).join('').slice(0,2)}</div><div style="flex:1"><b>${c[0]}</b><small>${c[3]}</small></div><span class="lv">● LIVE</span></div>`).join(''):'<p style="padding:30px 16px;max-width:none;text-align:center">Ces chaînes arrivent bientôt.</p>')}
 function watch(i){$('#lp').innerHTML=`<iframe src="https://www.youtube.com/embed/live_stream?channel=${CH[i][2]}&autoplay=1" allow="autoplay;fullscreen" allowfullscreen style="width:100%;aspect-ratio:16/9;border:0;border-radius:12px"></iframe>`;$('#s18').scrollTo({top:0,behavior:'smooth'})}
