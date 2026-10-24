@@ -315,7 +315,7 @@ async function syHas(t,x){const k=t+':'+x.id,c=SYC[k];if(c&&Date.now()-c[1]<864e
  try{await syFind(t,x);SYC[k]=[1,Date.now()]}catch(e){if(e==='nomatch')SYC[k]=[0,Date.now()];else return 1}
  clearTimeout(syS);syS=setTimeout(()=>sv('hsy',SYC),800);return SYC[k][0]}
 const PQ=[];let pAct=0;
-function pump(){while(pAct<6&&PQ.length){const [f,r]=PQ.shift();pAct++;f().then(r,()=>r(1)).finally(()=>{pAct--;pump()})}}
+function pump(){while(pAct<3&&PQ.length){const [f,r]=PQ.shift();pAct++;f().then(r,()=>r(1)).finally(()=>{pAct--;pump()})}}
 const pool=f=>new Promise(r=>{PQ.push([f,r]);pump()});
 function syClean(){document.querySelectorAll('.pc.chk:not([data-q]),.wide.chk:not([data-q])').forEach(el=>{el.dataset.q=1;const x={id:+el.dataset.id,title:el.dataset.ti,original_title:el.dataset.o};
  pool(()=>syHas(el.dataset.t,x)).then(ok=>{if(ok){el.classList.remove('chk');return}const row=el.parentElement;el.remove();if(!row||row.querySelector('.pc,.wide,.sk'))return;
@@ -351,37 +351,46 @@ function fsT(){const p=P();if(!p)return;
 addEventListener('resize',fit);
 /* ===== Lecture : Syrix via /syrix, sinon bandes-annonces TMDB ===== */
 const nm=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
-async function syJ(u){let r,j=null;try{r=await fetch(u)}catch(e){throw 'reseau'}try{j=await r.json()}catch(e){}if(!r.ok||!j||j.success===false)throw (j&&j.error&&j.error.code)||('http_'+r.status);return j}
-async function syFind(t,d){const want=t==='movie'?['movie']:['series','drama','anime'],names=[...new Set([d.title,d.name,d.original_title,d.original_name].filter(Boolean))];
- for(const q of names){const s=await syJ(SYRIX_PROXY+'/search?q='+encodeURIComponent(q)),a=(Array.isArray(s.data)?s.data:(s.data&&(s.data.results||s.data.items))||[]).filter(x=>want.includes(x.type));
+const RLC=['rate_limited','source_rate_limited','http_429','http_503'];
+async function syJ(u,n=0){let r,j=null;try{r=await fetch(u)}catch(e){throw 'reseau'}try{j=await r.json()}catch(e){}if(!r.ok||!j||j.success===false){const c=(j&&j.error&&j.error.code)||('http_'+r.status);if(n>0&&RLC.includes(c)){await new Promise(z=>setTimeout(z,1200));return syJ(u,n-1)}throw c}return j}
+async function syFind(t,d,rr=0){const want=t==='movie'?['movie']:['series','drama','anime'],names=[...new Set([d.title,d.name,d.original_title,d.original_name].filter(Boolean))];
+ for(const q of names){const s=await syJ(SYRIX_PROXY+'/search?q='+encodeURIComponent(q),rr),a=(Array.isArray(s.data)?s.data:(s.data&&(s.data.results||s.data.items))||[]).filter(x=>want.includes(x.type));
   const exact=x=>names.some(n=>nm(x.title)===nm(n)),loose=x=>names.some(n=>{const p=nm(x.title),r=nm(n);return p.length>3&&r.length>3&&(p.includes(r)||r.includes(p))}),h=a.find(exact)||a.find(loose);
-  if(h){const ty={movie:'movies',series:'series',anime:'anime',drama:'dramas'}[h.type],dt=(await syJ(`${SYRIX_PROXY}/${ty}/${h.slug}`)).data||{};return{ty,slug:h.slug,dt}}}
+  if(h){const ty={movie:'movies',series:'series',anime:'anime',drama:'dramas'}[h.type],dt=(await syJ(`${SYRIX_PROXY}/${ty}/${h.slug}`,rr)).data||{};return{ty,slug:h.slug,dt}}}
  throw 'nomatch'}
-async function syServers(ty,slug,ep){const u=ty==='movies'||ty==='series'?`${SYRIX_PROXY}/episodes/${ep}/servers`:`${SYRIX_PROXY}/${ty}/${slug}/servers?episode=${encodeURIComponent(ep)}`;const v=(await syJ(u)).data;const l=Array.isArray(v)?v.filter(x=>x&&x.server_link):[];if(!l.length)throw 'noservers';return l}
+async function syServers(ty,slug,ep,rr=0){const u=ty==='movies'||ty==='series'?`${SYRIX_PROXY}/episodes/${ep}/servers`:`${SYRIX_PROXY}/${ty}/${slug}/servers?episode=${encodeURIComponent(ep)}`;const v=(await syJ(u,rr)).data;const l=Array.isArray(v)?v.filter(x=>x&&x.server_link):[];if(!l.length)throw 'noservers';const vr=x=>/^vf$/i.test(x.version||'')?0:/vostfr/i.test(x.version||'')?1:2;return l.sort((a,b)=>vr(a)-vr(b))}
 async function play(t,id){const d=await T(`/${t}/${id}`),title=d.title||d.name;window.CUR={t,id,d};window.SV=null;rec(t,id,d);$('#pl').style.display='flex';$('#plc').innerHTML='<p>Recherche de la source…</p>';
  let why='';
- try{const m=await syFind(t,d),eps=m.dt.episodes||[];window.SY={ty:m.ty,slug:m.slug};
+ try{const m=await syFind(t,d,2),eps=m.dt.episodes||[];window.SY={ty:m.ty,slug:m.slug};
   $('#plc').innerHTML=`<div id="pv"></div><div id="ps"></div><div id="pa"></div>${eps.length>1?`<select class="gs" style="margin-top:10px" onchange="srv(this.value)">${eps.map(e=>`<option value="${e.episode_id}">${e.season?'S'+e.season+' ':''}Ép. ${e.number||''}</option>`).join('')}</select>`:''}<p style="margin-top:10px">${m.dt.title||title}</p>`;
-  await srv(eps[0]?eps[0].episode_id:m.dt.first_episode_id,true);return}catch(e){why=String((e&&e.message)||e)}
+  await srv(t==='movie'?(m.dt.first_episode_id||(eps[0]&&eps[0].episode_id)):(eps[0]?eps[0].episode_id:m.dt.first_episode_id),true);return}catch(e){why=String((e&&e.message)||e)}
  trailer(t,id,title,why)}
 async function srv(ep,first){const {ty,slug}=SY;$('#pv').innerHTML='<p>Chargement…</p>';
- try{if(!ep)throw 'noservers';window.SV=(await syServers(ty,slug,ep)).slice(0,5);showSv(0)}
+ try{if(!ep)throw 'noservers';window.SV=(await syServers(ty,slug,ep,2)).slice(0,6);showSv(0)}
  catch(e){if(first)throw e;$('#pv').innerHTML='<p>Aucune source pour le moment.</p>';$('#ps').innerHTML=''}}
 const sb=(k,i,l)=>`<button class="btn sm ${k===i?'':'g'}" style="width:auto;padding:0 12px;margin:8px 6px 0 0" onclick="${l}">`;
-function showSv(i){const s=SV[i];$('#pv').innerHTML=stage(s.server_type==='embed'?`<iframe src="${s.server_link}" allow="autoplay;encrypted-media" referrerpolicy="no-referrer"></iframe>`:`<video src="${s.server_link}" controls controlslist="nofullscreen" playsinline></video>`);
- $('#ps').innerHTML=SV.map((x,k)=>sb(k,i,`showSv(${k})`)+'Lecteur '+(k+1)+'</button>').join('');pact()}
+function directPlay(v,u,i){if(!v)return;const nx=()=>{if(i+1<SV.length&&$('#pv video')===v)showSv(i+1)};v.addEventListener('error',nx);
+ if(!/\.m3u8(\?|#|$)/i.test(u)||v.canPlayType('application/vnd.apple.mpegurl')){v.src=u;return}
+ const run=()=>{if($('#pv video')!==v)return;try{const h=new Hls();window.HLSV=h;h.on(Hls.Events.ERROR,(_,d)=>{if(d.fatal)nx()});h.loadSource(u);h.attachMedia(v)}catch(e){nx()}};
+ if(window.Hls&&Hls.isSupported())return run();
+ if(window.Hls){nx();return}
+ const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/hls.js@1';s.onload=run;s.onerror=nx;document.head.appendChild(s)}
+function showSv(i){if(window.HLSV){try{HLSV.destroy()}catch(e){}window.HLSV=null}const s=SV[i],emb=s.server_type==='embed';
+ $('#pv').innerHTML=stage(emb?`<iframe src="${esc(s.server_link)}" allow="autoplay;encrypted-media;fullscreen" allowfullscreen referrerpolicy="no-referrer"></iframe>`:`<video controls controlslist="nofullscreen" playsinline autoplay></video>`);
+ if(!emb)directPlay($('#pv video'),s.server_link,i);
+ $('#ps').innerHTML=SV.map((x,k)=>sb(k,i,`showSv(${k})`)+'Lecteur '+(k+1)+(x.version?' · '+esc(x.version):'')+'</button>').join('');pact()}
 async function trailer(t,id,title,why){const v=((await T(`/${t}/${id}/videos?include_video_language=fr,en,null`)).results||[]).filter(x=>x.site==='YouTube').sort((a,b)=>(b.type==='Trailer')-(a.type==='Trailer'));window.YT=v;
- const R={no_key:'clé Syrix (SYRIX_KEY) absente sur le serveur',http_404:'relais /syrix introuvable (dossier api/ non déployé ?)',http_401:'clé Syrix refusée',http_403:'clé Syrix refusée',nomatch:'titre introuvable chez Syrix',noservers:'aucun lecteur disponible pour ce titre',reseau:'réseau indisponible'},
+ const R={no_key:'clé Syrix (SYRIX_KEY) absente sur le serveur',http_404:'relais /syrix introuvable (dossier api/ non déployé ?)',http_401:'clé Syrix refusée',http_403:'clé Syrix refusée',nomatch:'titre introuvable chez Syrix',noservers:'aucun lecteur disponible pour ce titre',no_servers:'aucun lecteur disponible pour ce titre',reseau:'réseau indisponible',rate_limited:'trop de requêtes Syrix (limite par minute), réessayez dans une minute',http_429:'trop de requêtes Syrix (limite par minute), réessayez dans une minute',source_rate_limited:'la source de Syrix limite temporairement, réessayez',http_503:'la source de Syrix limite temporairement, réessayez',insufficient_tokens:'solde de tokens Syrix insuffisant',invalid_api_key:'clé Syrix invalide ou expirée',api_key_required:'clé Syrix absente',source_unavailable:'catalogue Syrix indisponible',not_found:'titre ou épisode introuvable chez Syrix'},
  w=why?`<p style="margin-top:6px;font-size:11px;opacity:.7">Détail : ${R[why]||why}</p>`:'';
  $('#plc').innerHTML=v.length?`<div id="pv"></div><div id="ps"></div><div id="pa"></div><p style="margin-top:12px">La lecture complète de « ${title} » n'est pas disponible pour le moment. Bande-annonce affichée.</p>${w}`:`<p>Aucune source disponible pour « ${title} » pour le moment.</p>${w}`;if(v.length)showYt(0)}
 function showYt(i){const x=YT[i];$('#pv').innerHTML=stage(`<iframe src="https://www.youtube.com/embed/${x.key}?autoplay=1&fs=0&rel=0&modestbranding=1" allow="autoplay;encrypted-media"></iframe>`);
  $('#ps').innerHTML=YT.slice(0,5).map((_,k)=>sb(k,i,`showYt(${k})`)+'Lecteur '+(k+1)+'</button>').join('')+`<a class="btn sm g" style="display:inline-block;padding:11px 12px;margin-top:8px" href="https://www.youtube.com/watch?v=${x.key}" target="_blank" rel="noopener">Ouvrir sur YouTube</a>`;pact()}
 async function dl(t,id){toast('Recherche du fichier…');
  try{const c=window.CUR,d=(c&&c.id===id)?c.d:await T(`/${t}/${id}`);let f=(window.SV&&c&&c.id===id)?window.SV.find(x=>x.server_type!=='embed'):null;
-  if(!f){const m=await syFind(t,d),eps=m.dt.episodes||[],ep=eps[0]?eps[0].episode_id:m.dt.first_episode_id;if(!ep)throw 'noservers';f=(await syServers(m.ty,m.slug,ep)).find(x=>x.server_type!=='embed')}
+  if(!f){const m=await syFind(t,d,2),eps=m.dt.episodes||[],ep=t==='movie'?(m.dt.first_episode_id||(eps[0]&&eps[0].episode_id)):(eps[0]?eps[0].episode_id:m.dt.first_episode_id);if(!ep)throw 'noservers';f=(await syServers(m.ty,m.slug,ep,2)).find(x=>x.server_type!=='embed')}
   if(!f)throw 'nofile';const a=document.createElement('a');a.href=f.server_link;a.download=(d.title||d.name||'video')+'.mp4';a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();toast('Téléchargement lancé')}
  catch(e){toast(e==='nofile'?'Pas de fichier téléchargeable : lecteurs en streaming uniquement':'Téléchargement indisponible pour ce titre')}}
-function closePl(){$('#pl').style.display='none';$('#plc').innerHTML=''}
+function closePl(){if(window.HLSV){try{HLSV.destroy()}catch(e){}window.HLSV=null}$('#pl').style.display='none';$('#plc').innerHTML=''}
 /* ===== Thèmes / Paramètres ===== */
 const THEMES={Rouge:'#d32f2f',Bleu:'#2979ff',Violet:'#9c4dff',Or:'#f5a623',Vert:'#1db954',Rose:'#ff3d8b'};
 let cfg={acc:'#d32f2f',mode:'dark',auto:true,sub:true,notif:true};
@@ -402,7 +411,7 @@ let lc='Tous',VQ='',VCH=[],VGR=[];
 /* Format des chaînes : c[0]=id ("i12" = iptv, "v12" = vavoo), c[1]=nom, c[2]=groupe, c[3]=logo */
 const nk1=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
 async function iptvList(){try{const r=await fetch('/api/iptv?list=1&t='+Date.now());if(!r.ok)throw 0;const j=await r.json();
- const l=(j.channels||[]).map(x=>['i'+x.id,x.name||'',x.group||'',x.logo||'']);
+ const l=(j.channels||[]).map(x=>['i'+x.id,x.name||'',x.group||'',x.logo||'',x.fr===0?1:0]);
  return l.length?{l,g:(j.groups||[])}:null}catch(e){return null}}
 async function vavooList(){try{const r=await fetch('/vavoo?list=1&t='+Date.now());if(!r.ok)throw 0;const j=await r.json();
  const l=(j.channels||[]).map(x=>['v'+x.id,x.name||'',x.group||'',x.logo||'']);
@@ -451,7 +460,7 @@ function rowV(c){const ini=escV(c[1]).slice(0,2).toUpperCase();
  return `<div class="li" onclick="watchUrl('${c[0]}')"><div class="lw">${vis}<i class="lg">${escV(c[2])}</i></div><div style="flex:1;min-width:0"><b>${escV(c[1])}</b><small>${escV(catOf(c))}</small></div><button type="button" class="stb ${FAV.includes(c[0])?'on':''}" aria-label="Favori" onclick="event.stopPropagation();favT('${c[0]}',this)">${STAR}</button></div>`}
 function drawV(){const q=nm(VQ);
  const l=VCH.filter(c=>(lc==='Tous'||c[2]===lc)&&(!q||nm(c[1]).includes(q))&&(cc==='Toutes'||catOf(c)===cc));
- const srt=(x,y)=>String(x[1]).localeCompare(String(y[1]),'fr',{sensitivity:'base'});
+ const srt=(x,y)=>((x[4]||0)-(y[4]||0))||String(x[1]).localeCompare(String(y[1]),'fr',{sensitivity:'base'});
  let html='',flat=[];
  if(cc==='Toutes'){const g={};l.forEach(c=>{const k=catOf(c);(g[k]=g[k]||[]).push(c)});
   CATL.forEach(k=>{if(g[k]){g[k].sort(srt);html+=`<h3 class="cth">${escV(k)} <small>${g[k].length}</small></h3>`+g[k].map(rowV).join('');g[k].forEach(c=>flat.push(c[0]))}});
