@@ -44,7 +44,7 @@ body.tv .pw.fs .pi>:not(.stg):not(.wmk){zoom:var(--tk,1)}
 .pi>.pp{z-index:20}
 #duo{position:absolute;inset:0;z-index:66;background:var(--bg);display:none;flex-direction:column;align-items:center;padding:56px 22px 24px;overflow-y:auto;text-align:center}
 #duo.on{display:flex}#duo h2{margin:0 0 8px;font-size:22px}#duo p{max-width:300px;margin:6px auto}
-#duo .x{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;border:0;background:var(--card);color:var(--txt);font-size:16px;cursor:pointer}
+#duo .x{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;border:0;background:var(--card);color:var(--txt);font-size:16px;cursor:pointer;z-index:3}
 #duob{width:100%;display:flex;flex-direction:column;align-items:center}
 .qrb{background:#fff;padding:10px;border-radius:14px;margin:12px 0;line-height:0}.qrb img{width:240px;max-width:100%;height:auto;display:block}
 #scan{position:absolute;top:0;left:0;right:0;bottom:0;z-index:80;background:#000;display:none;flex-direction:column;align-items:center;justify-content:flex-end;padding:0 24px 40px}#scan.on{display:flex}
@@ -53,17 +53,40 @@ body.tv .pw.fs .pi>:not(.stg):not(.wmk){zoom:var(--tk,1)}
 #scan p{position:relative;color:#fff;margin-bottom:12px;text-shadow:0 2px 6px #000}#scan .btn{position:relative;width:auto;padding:0 28px}
 .dcode{font-size:42px;font-weight:800;letter-spacing:6px;margin:10px 0 4px;font-variant-numeric:tabular-nums}
 .dst{font-size:13px;color:var(--mut)}.dst.ok{color:#1db954}.dst.er{color:#ff5252}
-.dpad{display:grid;grid-template-columns:repeat(3,74px);grid-template-rows:repeat(3,74px);gap:10px;margin:16px 0}
-.dpad button,.dk button{border:0;border-radius:18px;background:var(--card);color:var(--txt);font-size:26px;cursor:pointer}
-.dpad button:active,.dk button:active{transform:scale(.94);background:var(--red)}
-.dpad .ok{background:var(--red);color:#fff;font-size:16px;font-weight:700}
-.dk{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:320px}.dk button{height:50px;font-size:14px;border-radius:12px}
 .dcin{width:100%;max-width:260px;background:var(--card);border:1px solid var(--line);border-radius:10px;color:var(--txt);font:inherit;font-size:28px;letter-spacing:8px;text-align:center;padding:12px;outline:0;margin:14px 0 4px}
 .dcin:focus{border-color:var(--red)}
 .dtabs{display:flex;gap:8px;margin:4px 0 14px}.dtabs button{border:1px solid var(--line);background:var(--card);color:var(--txt);border-radius:10px;padding:10px 14px;font:inherit;font-size:13px;cursor:pointer}.dtabs .a{background:var(--red);border-color:var(--red);color:#fff}
 #dbody{width:100%;display:flex;flex-direction:column;align-items:center}
 .dnum{display:grid;grid-template-columns:repeat(3,66px);gap:8px;margin:10px 0}.dnum button{height:52px;border:0;border-radius:12px;background:var(--card);color:var(--txt);font-size:20px;font-weight:600;cursor:pointer}
 .dact{display:flex;flex-direction:column;gap:8px;width:100%;max-width:300px;margin-top:10px}.dact .btn{margin:0}
+/* Télécommande plein écran (sans cadre) */
+#duo.rem{padding:0;overflow:hidden;align-items:stretch;background:#000}
+#duo.rem h2,#duo.rem .dtabs{display:none}
+#duo.rem #duob,#duo.rem #dbody{width:100%;height:100%}
+#duo.rem .x{top:max(12px,env(safe-area-inset-top));background:#1c1c1e;color:#fff}
+.drm{box-sizing:border-box;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:14px;padding:max(12px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));background:linear-gradient(180deg,#000 55%,#05324a 100%);color:#fff;overflow:hidden}
+.drm button{font-family:inherit;-webkit-tap-highlight-color:transparent}
+.drm button:active{transform:scale(.94)}
+.drh{width:100%;display:flex;align-items:center;justify-content:space-between;font-size:18px;font-weight:600;min-height:40px}
+.drh i{width:34px}
+.drof{width:34px;height:34px;border:0;background:none;color:#ff3b30;font-size:24px;cursor:pointer;padding:0}
+.drt{display:flex;gap:10px;width:100%;max-width:360px}
+.drt button{flex:1;height:58px;border:0;border-radius:18px;background:#1c1c1e;color:#fff;font-size:20px;line-height:1;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.drt small{font-size:11px;color:#bbb}
+.drp{position:relative;width:min(72vw,40vh);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 50% 35%,#4fdcff,#00b4f0 60%,#0094d0);box-shadow:0 10px 40px #00b4f055;flex:none}
+.drp .a{position:absolute;width:30%;height:30%;border:0;background:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.drp .a svg{width:36px;height:36px;stroke:#063447;stroke-width:2.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.drp .u{top:2%;left:35%}.drp .d{bottom:2%;left:35%}.drp .l{left:2%;top:35%}.drp .r{right:2%;top:35%}
+.drp .d svg{transform:rotate(180deg)}.drp .l svg{transform:rotate(-90deg)}.drp .r svg{transform:rotate(90deg)}
+.drp .ok{position:absolute;left:33%;top:33%;width:34%;height:34%;border-radius:50%;border:2px solid #fff;background:none;color:#fff;font-size:22px;font-weight:600;cursor:pointer}
+.drch{display:flex;align-items:center;justify-content:space-between;width:min(80vw,320px);height:64px;border-radius:40px;background:#1c1c1e;padding:0 8px;flex:none}
+.drch button{width:52px;height:52px;border:0;border-radius:50%;background:none;color:#fff;font-size:28px;cursor:pointer}
+.drch span{font-size:15px;color:#ddd}
+.drpad{flex:1;width:100%;max-width:360px;border-radius:28px;background:#111;border:2px dashed #00b4f088;display:flex;align-items:center;justify-content:center;text-align:center;color:#8ad;touch-action:none;user-select:none;-webkit-user-select:none;line-height:1.6}
+.drs{display:flex;background:#1c1c1e;border-radius:30px;padding:5px;width:100%;max-width:360px;flex:none}
+.drs button{flex:1;height:46px;border:0;border-radius:26px;background:none;color:#fff;font-size:14px;cursor:pointer}
+.drs .a{background:#00b4f0;color:#04283a;font-weight:700}
+.drm .dst{margin:0;min-height:16px}
 `;document.head.appendChild(css);
 
 /* ===== 3. Navigation télécommande (flèches, OK, retour) ===== */
@@ -229,16 +252,37 @@ async function showHost(b){b.innerHTML='<p class="dst">Chargement de votre code�
     x.disabled=true;if(await revokeHost()){b.onclick=null;b.innerHTML='<p class="dst ok">✓ Code révoqué. Les appareils connectés sont déconnectés.</p><div class="dact"><button class="btn" type="button" data-act="new">Générer un nouveau code</button></div>';b.onclick=ev=>{if(ev.target.closest('[data-act=new]'))showHost(b)}}else{x.disabled=false;x.dataset.arm='';x.textContent='Révoquer ce code';toast('Révocation impossible pour le moment')}}}}
  catch(j){b.innerHTML=`<p class="dst er">${errT(j||{})}</p>`}}
 
-/* -- contrôleur : scan ou saisie du code, puis télécommande -- */
-const RK=[['',''],['up','▲'],['',''],['left','◀'],['ok','OK'],['right','▶'],['',''],['down','▼'],['','']];
-function remote(b,c){b.innerHTML=`<p class="dst ok">✓ Connecté</p><div class="dpad">${RK.map(([k,l])=>k?`<button type="button" data-c="${k}"${k==='ok'?' class="ok"':''}>${l}</button>`:'<span></span>').join('')}</div><div class="dk"><button type="button" data-c="back">‹ Retour</button><button type="button" data-c="home">Accueil</button><button type="button" data-c="chp">Chaîne −</button><button type="button" data-c="chn">Chaîne +</button><button type="button" data-c="prog">Programme</button><button type="button" data-c="_off">Déconnecter</button></div><p class="dst" id="dmsg"></p>`;
- b.onclick=async e=>{const x=e.target.closest('[data-c]');if(!x)return;const k=x.dataset.c;
+/* -- contrôleur : scan ou saisie du code, puis télécommande plein écran -- */
+const CHV='<svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>';
+function remote(b,c){const d=$('#duo');if(d)d.classList.add('rem');
+ let mode=ls.g('hduom')==='pad'?'pad':'nav';
+ const send=async k=>{if(navigator.vibrate)navigator.vibrate(12);
+  const j=await post({a:'send',code:c,cmd:k});
+  if(!j.ok){const m=$('#dmsg');if(j.s===404){ls.s('hduor',null);b.onclick=null;enter(b,'Ce code a été révoqué ou a expiré. Scannez ou saisissez le nouveau code.')}else if(m){m.className='dst er';m.textContent=errT(j)}}};
+ const draw=()=>{
+  b.innerHTML=`<div class="drm">
+   <div class="drh"><button type="button" class="drof" data-c="_off" aria-label="Déconnecter">⏻</button><span>Télécommande</span><i></i></div>
+   <div class="drt"><button type="button" data-c="back">↩<small>Retour</small></button><button type="button" data-c="home">⌂<small>Accueil</small></button><button type="button" data-c="prog">☰<small>Programme</small></button></div>
+   ${mode==='nav'?`<div class="drp"><button type="button" class="a u" data-c="up" aria-label="Haut">${CHV}</button><button type="button" class="a d" data-c="down" aria-label="Bas">${CHV}</button><button type="button" class="a l" data-c="left" aria-label="Gauche">${CHV}</button><button type="button" class="a r" data-c="right" aria-label="Droite">${CHV}</button><button type="button" class="ok" data-c="ok">OK</button></div>
+   <div class="drch"><button type="button" data-c="chp" aria-label="Chaîne précédente">−</button><span>Chaîne</span><button type="button" data-c="chn" aria-label="Chaîne suivante">+</button></div>`
+   :`<div class="drpad" id="dpad"><p>Glissez pour naviguer<br>Touchez pour valider</p></div>`}
+   <div class="drs"><button type="button" data-m="nav" class="${mode==='nav'?'a':''}">Navigation</button><button type="button" data-m="pad" class="${mode==='pad'?'a':''}">Pavé tactile</button></div>
+   <p class="dst" id="dmsg"></p></div>`;
+  const pd=$('#dpad');
+  if(pd){let x0=null,y0=0,ax=0,ay=0,t0=0,moved=0;
+   pd.onpointerdown=e=>{try{pd.setPointerCapture(e.pointerId)}catch(x){}x0=ax=e.clientX;y0=ay=e.clientY;t0=Date.now();moved=0;e.preventDefault()};
+   pd.onpointermove=e=>{if(x0==null)return;const dx=e.clientX-ax,dy=e.clientY-ay;if(Math.max(Math.abs(dx),Math.abs(dy))<44)return;moved=1;send(Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up'));ax=e.clientX;ay=e.clientY};
+   pd.onpointerup=e=>{if(x0!=null&&!moved&&Date.now()-t0<500&&Math.hypot(e.clientX-x0,e.clientY-y0)<14)send('ok');x0=null};
+   pd.onpointercancel=()=>{x0=null}}};
+ draw();
+ b.onclick=e=>{const m=e.target.closest('[data-m]');if(m){mode=m.dataset.m;ls.s('hduom',mode);draw();return}
+  const x=e.target.closest('[data-c]');if(!x)return;const k=x.dataset.c;
   if(k==='_off'){ls.s('hduor',null);b.onclick=null;enter(b);return}
-  if(navigator.vibrate)navigator.vibrate(12);
-  const j=await post({a:'send',code:c,cmd:k});if(!j.ok){const m=$('#dmsg');if(j.s===404){ls.s('hduor',null);b.onclick=null;enter(b,'Ce code a été révoqué ou a expiré. Scannez ou saisissez le nouveau code.')}else if(m){m.className='dst er';m.textContent=errT(j)}}}}
+  send(k)}}
 async function join(b,c){if(c===host){enter(b,'C\'est le code de cet appareil : scannez ou saisissez celui de l\'autre.');return}
  const j=await post({a:'join',code:c});if(j.ok){ls.s('hduor',c);remote(b,c)}else enter(b,errT(j))}
-function enter(b,msg){const cam=!IS&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia;
+function enter(b,msg){const d=$('#duo');if(d)d.classList.remove('rem');
+ const cam=!IS&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia;
  const pad=IS?`<div class="dnum">${[1,2,3,4,5,6,7,8,9].map(n=>`<button type="button" data-k="${n}">${n}</button>`).join('')}<button type="button" data-k="del">⌫</button><button type="button" data-k="0">0</button><button type="button" data-k="ok">OK</button></div>`:'';
  b.innerHTML=`<p>Scannez le code QR de l'autre appareil${IS?'':' avec la caméra'}, ou saisissez son code à 6 chiffres.</p>${cam?'<div class="dact"><button class="btn" type="button" data-act="scan">📷 Scanner un code QR</button></div>':''}<input class="dcin" id="duoc" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="······" autocomplete="one-time-code"${IS?' readonly':''}>${pad}<p class="dst er" id="dmsg">${msg||''}</p><div class="dact"><button class="btn${cam?' g':''}" type="button" id="duog">Connecter</button></div>`;
  const i=$('#duoc'),g=()=>{const v=i.value.replace(/\D/g,'');if(v.length!==6){$('#dmsg').textContent='Le code doit faire 6 chiffres.';return}join(b,v)};
@@ -247,7 +291,7 @@ function enter(b,msg){const cam=!IS&&navigator.mediaDevices&&navigator.mediaDevi
   const x=e.target.closest('[data-k]');if(!x)return;const k=x.dataset.k;if(k==='del')i.value=i.value.slice(0,-1);else if(k==='ok')g();else if(i.value.length<6){i.value+=k;if(i.value.length===6)g()}}}
 
 /* -- écran Duo -- */
-function duoUI(tab){const b=$('#duob');ls.s('hduotab',tab);
+function duoUI(tab){const b=$('#duob'),dd=$('#duo');if(dd)dd.classList.remove('rem');ls.s('hduotab',tab);
  b.innerHTML=`<h2>Duo</h2><div class="dtabs"><button type="button" data-tab="host" class="${tab==='host'?'a':''}">Mon code QR</button><button type="button" data-tab="ctl" class="${tab==='ctl'?'a':''}">Scanner / saisir</button></div><div id="dbody"></div>`;
  b.querySelector('.dtabs').onclick=e=>{const x=e.target.closest('[data-tab]');if(x){scanClose();duoUI(x.dataset.tab)}};
  const body=$('#dbody');if(tab==='host')showHost(body);else{const c=ls.g('hduor');if(c)join(body,c);else enter(body)}}
