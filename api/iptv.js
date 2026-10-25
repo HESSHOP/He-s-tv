@@ -7,7 +7,8 @@
 //   IPTV_SOURCES    liste de playlists séparées par des virgules (remplace les défauts)
 //   IPTV_MAX        nb max de chaînes francophones (défaut 900)
 //   IPTV_MAX_OTHER  nb max de chaînes des autres langues (défaut 1200) ; 0 = désactiver
-//   IPTV_BUDGET_MS  temps max de vérification des flux (défaut 8000). Les flux non vérifiés à temps sont quand même listés
+//   IPTV_CHECK      1 = vérifier que les flux répondent avant de les lister (plus lent ; défaut : non, la liste doit rester rapide)
+//   IPTV_BUDGET_MS  si IPTV_CHECK=1 : temps max de vérification (défaut 8000). Les flux non vérifiés à temps sont quand même listés
 //                   (iptv-org teste déjà ses flux chaque jour) : la liste n'est jamais vide.
 
 const BASE = 'https://iptv-org.github.io/iptv/';
@@ -154,13 +155,13 @@ async function buildAll() {
   const custom = (process.env.IPTV_SOURCES || '').split(',').map(s => s.trim()).filter(Boolean);
   const maxOther = +(process.env.IPTV_MAX_OTHER === undefined ? 1200 : process.env.IPTV_MAX_OTHER);
   const urls = custom.length ? custom : [...FR_SOURCES, ...(maxOther > 0 ? OTHER_SOURCES : [])];
-  // La base (langues + logos, ~9 Mo) ne doit jamais bloquer la liste : au-delà de 6 s on continue sans elle
-  const dbQ = Promise.race([loadDb(), new Promise(r => setTimeout(() => r(db), 6000))]);
+  // La base (langues + logos, ~9 Mo) ne doit jamais bloquer la liste : au-delà de 5 s on continue sans elle
+  const dbQ = Promise.race([loadDb(), new Promise(r => setTimeout(() => r(db), 5000))]);
   const [d, plays] = await Promise.all([
     dbQ,
     Promise.all(urls.map(async u => {
       try {
-        const r = await fetch(u, { signal: AbortSignal.timeout(10000) });
+        const r = await fetch(u, { signal: AbortSignal.timeout(8000) });
         return r.ok ? parseM3U(await r.text()) : [];
       } catch (e) { return []; }
     }))
@@ -228,17 +229,35 @@ async function aliveFilter(list, cap, deadline) {
 
 let listCache = { t: 0, d: null };
 let building = null;
+// Autres langues : on répartit les places entre les langues (tour de rôle) pour que chacune soit représentée
+function diverse(list, cap) {
+  const g = new Map();
+  list.forEach(c => { const k = c.lang || '_'; if (!g.has(k)) g.set(k, []); g.get(k).push(c); });
+  const lists = [...g.values()].sort((x, y) => y.length - x.length), out = [];
+  for (let i = 0; out.length < cap; i++) {
+    let any = false;
+    for (const l of lists) { if (i < l.length && out.length < cap) { out.push(l[i]); any = true; } }
+    if (!any) break;
+  }
+  return out;
+}
 async function buildList() {
   const a = await loadAll();
+  const check = process.env.IPTV_CHECK === '1';
   const budget = +(process.env.IPTV_BUDGET_MS || 8000), start = Date.now();
   const maxFr = +(process.env.IPTV_MAX || 900), maxOther = +(process.env.IPTV_MAX_OTHER === undefined ? 1200 : process.env.IPTV_MAX_OTHER);
   const byName = (x, y) => x.group.localeCompare(y.group, 'fr') || x.name.localeCompare(y.name, 'fr');
-  const pick = (r, cap) => [...r.alive.sort(byName), ...r.rest.slice(0, Math.max(0, cap - r.alive.length)).sort(byName)];
-  const fr = await aliveFilter(a.fr, maxFr, start + budget * 0.6);
-  const oth = maxOther > 0
-    ? await aliveFilter(a.other.slice().sort((x, y) => (y.logo ? 1 : 0) - (x.logo ? 1 : 0)), maxOther, start + budget)
-    : { alive: [], rest: [] };
-  const list = [...pick(fr, maxFr), ...pick(oth, maxOther)];
+  let frL, othL;
+  if (check) {
+    const pick = (r, cap) => [...r.alive.sort(byName), ...r.rest.slice(0, Math.max(0, cap - r.alive.length)).sort(byName)];
+    const fr = await aliveFilter(a.fr, maxFr, start + budget * 0.6);
+    const oth = maxOther > 0 ? await aliveFilter(diverse(a.other, maxOther * 2), maxOther, start + budget) : { alive: [], rest: [] };
+    frL = pick(fr, maxFr); othL = pick(oth, maxOther);
+  } else {
+    frL = a.fr.slice(0, maxFr).sort(byName);
+    othL = maxOther > 0 ? diverse(a.other, maxOther).sort(byName) : [];
+  }
+  const list = [...frL, ...othL];
   const d = {
     groups: [...new Set(list.map(c => c.group))].sort((x, y) => x.localeCompare(y, 'fr')),
     channels: list.map(c => ({ id: c.id, name: c.name, group: c.group, logo: c.logo, fr: c.fr, lang: c.lang }))
