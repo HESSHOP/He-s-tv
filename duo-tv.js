@@ -12,9 +12,12 @@ const IS=(()=>{const f=new URLSearchParams(location.search).get('tv');
  if(/SMART-?TV|SmartTV|Tizen|Web0S|WebOS|NetCast|HbbTV|BRAVIA|VIDAA|Hisense|\bAFT[A-Z]+\b|CrKey|GoogleTV|Android ?TV|AppleTV|Roku|Viera|\bTV\b|Large ?Screen/i.test(ua))return true;
  /* Box Android (ex. Dreamlink) : Android, pas « Mobile », pas d'écran tactile */
  return /Android/i.test(ua)&&!/Mobile/i.test(ua)&&!(navigator.maxTouchPoints>0)})();
-window.IS_TV=IS;document.body.classList.toggle('tv',IS);document.body.classList.toggle('tvmode',IS);
+window.IS_TV=IS;
+/* Mise en page « grand écran » (plein écran, colonnes, barre à gauche) : sur une télé, OU sur tout écran large en paysage (ordinateur, tablette, navigateur en mode ordinateur) */
+const WIDE=()=>innerWidth>=1000&&innerWidth>innerHeight*1.2;
 const tvk=()=>document.documentElement.style.setProperty('--tk',Math.max(.5,innerHeight/540));
-if(IS){tvk();addEventListener('resize',tvk)}
+function lay(){const on=IS||WIDE();document.body.classList.toggle('tv',on);document.body.classList.toggle('tvmode',on);if(on)tvk()}
+lay();addEventListener('resize',lay);
 
 /* ===== 2. Styles (mode TV + Duo) ===== */
 const css=document.createElement('style');css.textContent=`
