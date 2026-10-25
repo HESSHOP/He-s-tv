@@ -1,6 +1,8 @@
 // API IPTV pour HE'S TV — sources : https://github.com/iptv-org/iptv (flux) + https://github.com/iptv-org/database (langues, logos)
 //   /iptv?list=1  -> {groups, channels:[{id,name,group,logo,fr}]}   (fr:1 = francophone)
 //   /iptv?id=<id> -> {url:"<m3u8>"}
+//   /iptv?logos=1 -> {clé de nom: url du logo}  (pour compléter les chaînes d'autres sources)
+// Une chaîne sans logo n'est jamais listée.
 // Env optionnelles :
 //   IPTV_SOURCES    liste de playlists séparées par des virgules (remplace les défauts)
 //   IPTV_MAX        nb max de chaînes francophones (défaut 900)
@@ -44,6 +46,8 @@ const cleanName = s => {
   return n.trim().replace(/\s+/g, ' ');
 };
 const normKey = n => n.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+// Clé « de base » d'une chaîne : sans (1) (7) (BACKUP), HD, FHD, 4K… (même fonction côté application)
+const baseKey = n => normKey(String(n || '').replace(/\((?:\d+|backup)\)/gi, ' ').replace(/\b(?:fhd|uhd|hd|sd|4k|h265|hevc|backup|hq)\b/gi, ' '));
 
 const GROUP_MAP = {
   news: 'Info', 'news & politics': 'Info', politics: 'Info', weather: 'Info', legislative: 'Info', public: 'Info',
@@ -83,16 +87,19 @@ const getJSON = async (url, ms = 15000) => {
 };
 
 // Base iptv-org : langues par chaîne (feeds.json) + meilleur logo par chaîne (logos.json). Cache 24 h.
-let db = { t: 0, ok: false, fra: new Set(), known: new Set(), logos: new Map() };
+let db = { t: 0, ok: false, fra: new Set(), known: new Set(), lang: new Map(), logos: new Map() };
 async function loadDb() {
   if (db.t && Date.now() - db.t < 864e5) return db;
   const [feeds, logos] = await Promise.all([
     getJSON(DB + 'feeds.json').catch(() => null),
     getJSON(DB + 'logos.json').catch(() => null)
   ]);
-  const fra = new Set(), known = new Set();
+  const fra = new Set(), known = new Set(), lang = new Map();
   if (Array.isArray(feeds)) feeds.forEach(f => {
-    if ((f.languages || []).length) known.add(f.channel);
+    if ((f.languages || []).length) {
+      known.add(f.channel);
+      if (!lang.has(f.channel) || f.is_main) lang.set(f.channel, f.languages[0]);
+    }
     if ((f.languages || []).includes('fra')) fra.add(f.channel);
   });
   // Même règle qu'iptv-org : PNG d'abord, puis JPEG, puis les autres, SVG en dernier ; taille proche de 512 px
@@ -106,7 +113,7 @@ async function loadDb() {
   });
   const map = new Map();
   best.forEach((v, k) => map.set(k, v.url));
-  const next = { t: Date.now(), ok: fra.size > 0, fra, known, logos: map };
+  const next = { t: Date.now(), ok: fra.size > 0, fra, known, lang, logos: map };
   if (fra.size || map.size) db = next; else db = { ...db, t: Date.now() - 864e5 + 6e5 }; // base injoignable : on réessaie dans 10 min
   return db;
 }
@@ -135,10 +142,15 @@ function parseM3U(text) {
 }
 
 // Étape 1 (rapide, sans vérification des flux) : playlists + langues + logos, dédoublonnées. Cache 6 h.
-let all = { t: 0, fr: [], other: [], byId: new Map() };
+let all = { t: 0, fr: [], other: [], byId: new Map(), names: {} };
 const TTL = 6 * 3600 * 1000;
-async function loadAll() {
-  if (all.t && Date.now() - all.t < TTL) return all;
+let allP = null;
+function loadAll() {
+  if (all.t && Date.now() - all.t < TTL) return Promise.resolve(all);
+  allP = allP || buildAll().finally(() => { allP = null; });
+  return allP;
+}
+async function buildAll() {
   const custom = (process.env.IPTV_SOURCES || '').split(',').map(s => s.trim()).filter(Boolean);
   const maxOther = +(process.env.IPTV_MAX_OTHER === undefined ? 1200 : process.env.IPTV_MAX_OTHER);
   const urls = custom.length ? custom : [...FR_SOURCES, ...(maxOther > 0 ? OTHER_SOURCES : [])];
@@ -154,33 +166,38 @@ async function loadAll() {
     }))
   ]);
 
-  const seen = new Set(), fr = [], other = [], byId = new Map();
+  const seen = new Set(), fr = [], other = [], byId = new Map(), names = {};
   plays.flat().forEach(c => {
     c.name = cleanName(c.name);
     if (!c.name || FAKE_PAT.test(c.name) || /\bradio\b/i.test(c.name)) return;
     const base = (c.tvgId || '').split('@')[0];
+    // Logo obligatoire : une chaîne sans logo n'est jamais listée
+    c.logo = (c.logo && /^https?:\/\//i.test(c.logo) && c.logo) || d.logos.get(base) || '';
+    if (!c.logo) return;
+    c.logo = c.logo.replace(/^http:\/\//i, 'https://');
+    const key = baseKey(c.name);
+    if (!key) return;
+    if (!names[key]) names[key] = c.logo; // table nom -> logo (sert à compléter d'autres sources, ex. Vavoo)
     const tld = base.includes('.') ? base.split('.').pop().toLowerCase() : '';
     // Langue connue dans la base : on s'y fie (évite les chaînes de la diaspora classées « françaises »).
     // Sinon : pays francophone non mixte ; sans base du tout : pays ou nom typique.
     const isFr = d.ok
       ? (d.known.has(base) ? d.fra.has(base) : FRA_TLDS.has(tld) && !MIXED.has(tld))
       : FRA_TLDS.has(tld) || FR_NAME_PAT.test(c.name);
-    const key = normKey(c.name);
-    if (!key) return;
     if (seen.has(key)) return;
     // Autres langues : un navigateur ne peut pas envoyer de « Referer » imposé, ces flux échoueraient
     if (!isFr && c.ref) return;
     seen.add(key);
-    c.logo = (c.logo && /^https?:\/\//i.test(c.logo) && c.logo) || d.logos.get(base) || '';
     c.group = mapGroup(c.group);
     c.fr = isFr ? 1 : 0;
+    c.lang = isFr ? 'fra' : (d.lang.get(base) || '');
     let id = hashId(c.url);
     while (byId.has(id) && byId.get(id) !== c.url) id += 'x';
     c.id = id;
     byId.set(id, c.url);
     (isFr ? fr : other).push(c);
   });
-  all = { t: d.ok ? Date.now() : Date.now() - TTL + 6e5, fr, other, byId }; // base de langues absente : on recalcule dans 10 min
+  all = { t: d.ok ? Date.now() : Date.now() - TTL + 6e5, fr, other, byId, names }; // base de langues absente : on recalcule dans 10 min
   return all;
 }
 
@@ -224,7 +241,7 @@ async function buildList() {
   const list = [...pick(fr, maxFr), ...pick(oth, maxOther)];
   const d = {
     groups: [...new Set(list.map(c => c.group))].sort((x, y) => x.localeCompare(y, 'fr')),
-    channels: list.map(c => ({ id: c.id, name: c.name, group: c.group, logo: c.logo, fr: c.fr }))
+    channels: list.map(c => ({ id: c.id, name: c.name, group: c.group, logo: c.logo, fr: c.fr, lang: c.lang }))
   };
   // Liste vide ou réduite (réseau en panne) : on ne la garde que 5 min, sinon 6 h
   listCache = { t: list.length > 50 ? Date.now() : Date.now() - TTL + 3e5, d };
@@ -245,6 +262,7 @@ module.exports = async (req, res) => {
       const url = a.byId.get(String(q.id));
       return url ? res.status(200).json({ url }) : res.status(404).json({ success: false });
     }
+    if (q.logos) { const a = await loadAll(); return send(res, a.names); } // {clé de nom: url du logo}
     if (!q.list) return res.status(400).json({ success: false, error: 'bad_request' });
     if (listCache.d && Date.now() - listCache.t < TTL) return send(res, listCache.d);
     building = building || buildList().finally(() => { building = null; });
@@ -256,4 +274,4 @@ module.exports = async (req, res) => {
     res.status(502).json({ success: false, error: String((e && e.message) || e) });
   }
 };
-module.exports._t = { parseM3U, mapGroup, cleanName, normKey, hashId, loadAll, buildList };
+module.exports._t = { parseM3U, mapGroup, cleanName, normKey, baseKey, hashId, loadAll, buildList };
