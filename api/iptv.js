@@ -7,7 +7,7 @@
 //   IPTV_SOURCES    liste de playlists séparées par des virgules (remplace les défauts)
 //   IPTV_MAX        nb max de chaînes francophones (défaut 900)
 //   IPTV_MAX_OTHER  nb max de chaînes des autres langues (défaut 1200) ; 0 = désactiver
-//   IPTV_BUDGET_MS  temps max de vérification des flux (défaut 15000). Les flux non vérifiés à temps sont quand même listés
+//   IPTV_BUDGET_MS  temps max de vérification des flux (défaut 8000). Les flux non vérifiés à temps sont quand même listés
 //                   (iptv-org teste déjà ses flux chaque jour) : la liste n'est jamais vide.
 
 const BASE = 'https://iptv-org.github.io/iptv/';
@@ -230,7 +230,7 @@ let listCache = { t: 0, d: null };
 let building = null;
 async function buildList() {
   const a = await loadAll();
-  const budget = +(process.env.IPTV_BUDGET_MS || 15000), start = Date.now();
+  const budget = +(process.env.IPTV_BUDGET_MS || 8000), start = Date.now();
   const maxFr = +(process.env.IPTV_MAX || 900), maxOther = +(process.env.IPTV_MAX_OTHER === undefined ? 1200 : process.env.IPTV_MAX_OTHER);
   const byName = (x, y) => x.group.localeCompare(y.group, 'fr') || x.name.localeCompare(y.name, 'fr');
   const pick = (r, cap) => [...r.alive.sort(byName), ...r.rest.slice(0, Math.max(0, cap - r.alive.length)).sort(byName)];
