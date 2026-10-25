@@ -53,6 +53,10 @@ body.tv .pw.fs .pi>:not(.stg):not(.wmk){zoom:var(--tk,1)}
 .dk{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:320px}.dk button{height:50px;font-size:14px;border-radius:12px}
 .dcin{width:100%;max-width:260px;background:var(--card);border:1px solid var(--line);border-radius:10px;color:var(--txt);font:inherit;font-size:28px;letter-spacing:8px;text-align:center;padding:12px;outline:0;margin:14px 0 4px}
 .dcin:focus{border-color:var(--red)}
+.dtabs{display:flex;gap:8px;margin:4px 0 14px}.dtabs button{border:1px solid var(--line);background:var(--card);color:var(--txt);border-radius:10px;padding:10px 14px;font:inherit;font-size:13px;cursor:pointer}.dtabs .a{background:var(--red);border-color:var(--red);color:#fff}
+#dbody{width:100%;display:flex;flex-direction:column;align-items:center}
+.dnum{display:grid;grid-template-columns:repeat(3,66px);gap:8px;margin:10px 0}.dnum button{height:52px;border:0;border-radius:12px;background:var(--card);color:var(--txt);font-size:20px;font-weight:600;cursor:pointer}
+.dact{display:flex;flex-direction:column;gap:8px;width:100%;max-width:300px;margin-top:10px}.dact .btn{margin:0}
 `;document.head.appendChild(css);
 
 /* ===== 3. Navigation télécommande (flèches, OK, retour) ===== */
@@ -76,7 +80,7 @@ function mv(dx,dy){const l=items();if(!l.length)return;
  if(best)setF(best)}
 function okk(){if(!cu||!document.contains(cu)){mv(0,0);return}
  const t=cu.tagName;if((t==='INPUT'&&cu.type!=='checkbox')||t==='TEXTAREA'){cu.focus();return}cu.click()}
-const BK={s15:'s11',s19:'s12',s17:'s12',s14:'s11',s16:'s11',s18:'s11',s12:'s11',s13:'s11',s8:'s7',s7:'s6',s10:'s7',s9:'s8'};
+const BK={s19:'s12',s17:'s12',s12:'s18',s8:'s7',s7:'s6',s10:'s7',s9:'s8'};
 function back(){if(open('ppnl')){closePP();return 1}if(open('duo')){duoClose();return 1}
  if(isBig(P())){fsT();return 1}if(open('hp')){closeHp();return 1}
  if($('#pl').style.display==='flex'){closePl();return 1}if(BK[cur]){go(BK[cur]);return 1}return 0}
@@ -110,58 +114,77 @@ const _w=window.watchUrl;window.watchUrl=function(){const r=_w.apply(this,argume
 setInterval(()=>{const p=P(),h=isBig(p)?p.querySelector('.pi'):null;
  [['pgband','#stk'],['pbtn','#app'],['ppnl','#app']].forEach(([id,home])=>{const e=document.getElementById(id),t=h||$(home);if(e&&t&&e.parentElement!==t)t.appendChild(e)})},700);
 
-/* ===== 5. Duo : télécommande téléphone ↔ télé ===== */
+/* ===== 5. Duo : télécommande entre appareils =====
+   Hôte = appareil qui reçoit les commandes (une télé). Contrôleur = appareil qui les envoie (téléphone ou autre télé).
+   Chaque télé a SON code personnel (+ un secret gardé sur l'appareil) qu'elle peut révoquer à tout moment. */
 const RI='<svg class="ic2" viewBox="0 0 24 24" style="width:22px;height:22px;stroke:var(--red)"><rect x="8" y="2" width="8" height="20" rx="3"/><circle cx="12" cy="8" r="1.6"/><path d="M10 13h4M10 17h4"/></svg>';
 const post=async b=>{let j={};try{const r=await fetch('/api/duo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});try{j=await r.json()}catch(e){}j.s=r.status}catch(e){j={ok:false,s:0}}return j};
-const errT=j=>j.s===503?'Duo n\'est pas encore activé sur le serveur (base Redis non configurée).':j.s===429?'Trop d\'essais, patientez une minute.':j.s===404?'Code introuvable ou expiré.':'Connexion impossible pour le moment.';
+const errT=j=>j.s===503?'Duo n\'est pas encore activé sur le serveur (base Redis non configurée).':j.s===429?'Trop d\'essais, patientez une minute.':j.s===404?'Code introuvable, révoqué ou expiré.':'Connexion impossible pour le moment.';
 const qrLib=()=>window.qrcode?Promise.resolve():new Promise((ok,ko)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';s.onload=ok;s.onerror=ko;document.head.appendChild(s)});
 const kev=(k,kc)=>document.dispatchEvent(new KeyboardEvent('keydown',{key:k,keyCode:kc,bubbles:true,cancelable:true}));
 
-/* -- côté télé : crée le code, reçoit et exécute les commandes -- */
-let host=null,joined=false,pt=0;
+/* -- hôte : code personnel, réception et exécution des commandes -- */
+let host=null,sec=null,joined=false,pt=0,lastCmd=0,pn=0;
 function run(c){const p=P();
  if(c==='up')kev('ArrowUp',38);else if(c==='down')kev('ArrowDown',40);else if(c==='left')kev('ArrowLeft',37);else if(c==='right')kev('ArrowRight',39);
  else if(c==='ok')kev('Enter',13);else if(c==='back')kev('Escape',27);else if(c==='prog')kev('p',80);
  else if(c==='chp'||c==='chn'){if(cur==='s18'&&p)chStep(c==='chp'?-1:1)}
- else if(c==='home'){if(open('duo'))duoClose();if(isBig(p))fsT();go('s11')}}
-function upd(){const e=$('#dst');if(e){e.className='dst'+(joined?' ok':'');e.textContent=joined?'✓ Téléphone connecté':'En attente du téléphone…'}}
-function loop(){clearInterval(pt);pt=setInterval(async()=>{if(!host)return;const j=await post({a:'poll',code:host});
- if(j.s===404){host=null;clearInterval(pt);ls.s('hduoh',null);return}
- if(j.ok){joined=j.joined;(j.cmds||[]).forEach(run);upd()}},1200)}
-async function hostStart(){if(host)return host;const c=ls.g('hduoh');
- if(c){const j=await post({a:'poll',code:c});if(j.ok){host=c;joined=j.joined;(j.cmds||[]).forEach(run);loop();return c}}
- const j=await post({a:'create'});if(!j.ok)throw j;host=j.code;joined=false;ls.s('hduoh',host);loop();return host}
-async function showHost(b){b.innerHTML='<h2>Duo</h2><p class="dst">Création du code…</p>';
+ else if(c==='home'){if(open('duo'))duoClose();if(isBig(p))fsT();go('s18')}}
+function upd(){const e=$('#dst');if(e){e.className='dst'+(joined?' ok':'');e.textContent=joined?'✓ Un appareil est connecté':'En attente d\'un appareil…'}}
+/* Sondage adaptatif (économise les requêtes Redis) : lent au repos, rapide quand on pilote ou que l'écran Duo est ouvert */
+function sched(){clearTimeout(pt);pt=setTimeout(tick,open('duo')?1500:!joined?5000:(Date.now()-lastCmd<20000?900:2500))}
+function dropHost(){host=null;sec=null;joined=false;clearTimeout(pt);ls.s('hduoh',null);ls.s('hduos',null)}
+async function tick(){if(!host)return;const j=await post({a:'poll',code:host,secret:sec,k:(pn++%300===0)?1:0});
+ if(j.s===404||j.s===403){dropHost();upd();return}
+ if(j.ok){joined=j.joined;if((j.cmds||[]).length){lastCmd=Date.now();j.cmds.forEach(run)}upd()}
+ sched()}
+async function hostStart(){if(host)return host;const c=ls.g('hduoh'),s2=ls.g('hduos');
+ if(c&&s2){const j=await post({a:'poll',code:c,secret:s2,k:1});
+  if(j.ok){host=c;sec=s2;joined=j.joined;(j.cmds||[]).forEach(run);sched();return c}
+  if(j.s===404||j.s===403){ls.s('hduoh',null);ls.s('hduos',null)}else throw j}
+ const j=await post({a:'create'});if(!j.ok)throw j;host=j.code;sec=j.secret;joined=false;ls.s('hduoh',host);ls.s('hduos',sec);sched();return host}
+async function revokeHost(){const j=await post({a:'revoke',code:host,secret:sec});if(j.ok||j.s===404){dropHost();return true}return false}
+async function showHost(b){b.innerHTML='<p class="dst">Chargement de votre code…</p>';b.onclick=null;
  try{const c=await hostStart();let qr='';
   try{await qrLib();const q=qrcode(0,'M');q.addData(location.origin+'/?duo='+c);q.make();qr=`<div class="qrb">${q.createImgTag(6,0)}</div>`}catch(e){}
-  b.innerHTML=`<h2>Duo</h2><p>Scannez ce code avec l'appareil photo de votre téléphone</p>${qr}<p>ou ouvrez HE'S TV sur votre téléphone : Paramètres › Duo, puis saisissez</p><div class="dcode">${c.slice(0,3)} ${c.slice(3)}</div><p class="dst" id="dst"></p>`;upd()}
- catch(j){b.innerHTML=`<h2>Duo</h2><p class="dst er">${errT(j||{})}</p>`}}
+  b.innerHTML=`<p>Votre code personnel. Scannez-le avec l'appareil photo d'un téléphone, ou saisissez-le sur un autre appareil : Paramètres › Duo${IS?' › Piloter une télé':''}.</p>${qr}<div class="dcode">${c.slice(0,3)} ${c.slice(3)}</div><p class="dst" id="dst"></p><div class="dact"><button class="btn g" type="button" data-act="revoke">Révoquer ce code</button></div>`;upd();
+  let armT=0;b.onclick=async e=>{const x=e.target.closest('[data-act]');if(!x)return;
+   if(x.dataset.act==='revoke'){if(!x.dataset.arm){x.dataset.arm=1;x.textContent='Confirmer : déconnecter tous les appareils';clearTimeout(armT);armT=setTimeout(()=>{x.dataset.arm='';x.textContent='Révoquer ce code'},5000);return}
+    x.disabled=true;if(await revokeHost()){b.onclick=null;b.innerHTML='<p class="dst ok">✓ Code révoqué. Les appareils connectés sont déconnectés.</p><div class="dact"><button class="btn" type="button" data-act="new">Générer un nouveau code</button></div>';b.onclick=ev=>{if(ev.target.closest('[data-act=new]'))showHost(b)}}else{x.disabled=false;x.dataset.arm='';x.textContent='Révoquer ce code';toast('Révocation impossible pour le moment')}}}}
+ catch(j){b.innerHTML=`<p class="dst er">${errT(j||{})}</p>`}}
 
-/* -- côté téléphone : saisie du code, puis télécommande -- */
+/* -- contrôleur : saisie du code (ou scan), puis télécommande -- */
 const RK=[['',''],['up','▲'],['',''],['left','◀'],['ok','OK'],['right','▶'],['',''],['down','▼'],['','']];
-function remote(b,c){b.innerHTML=`<h2>Duo</h2><p class="dst ok">✓ Connecté à la télé</p><div class="dpad">${RK.map(([k,l])=>k?`<button type="button" data-c="${k}"${k==='ok'?' class="ok"':''}>${l}</button>`:'<span></span>').join('')}</div><div class="dk"><button type="button" data-c="back">‹ Retour</button><button type="button" data-c="home">Accueil</button><button type="button" data-c="chp">Chaîne −</button><button type="button" data-c="chn">Chaîne +</button><button type="button" data-c="prog">Programme</button><button type="button" data-c="_off">Déconnecter</button></div><p class="dst" id="dmsg"></p>`;
+function remote(b,c){b.innerHTML=`<p class="dst ok">✓ Connecté</p><div class="dpad">${RK.map(([k,l])=>k?`<button type="button" data-c="${k}"${k==='ok'?' class="ok"':''}>${l}</button>`:'<span></span>').join('')}</div><div class="dk"><button type="button" data-c="back">‹ Retour</button><button type="button" data-c="home">Accueil</button><button type="button" data-c="chp">Chaîne −</button><button type="button" data-c="chn">Chaîne +</button><button type="button" data-c="prog">Programme</button><button type="button" data-c="_off">Déconnecter</button></div><p class="dst" id="dmsg"></p>`;
  b.onclick=async e=>{const x=e.target.closest('[data-c]');if(!x)return;const k=x.dataset.c;
   if(k==='_off'){ls.s('hduor',null);b.onclick=null;enter(b);return}
   if(navigator.vibrate)navigator.vibrate(12);
-  const j=await post({a:'send',code:c,cmd:k});if(!j.ok){const m=$('#dmsg');if(j.s===404){ls.s('hduor',null);b.onclick=null;enter(b,'La télé a fermé la session. Saisissez le nouveau code.')}else if(m){m.className='dst er';m.textContent=errT(j)}}}}
-async function join(b,c){const j=await post({a:'join',code:c});if(j.ok){ls.s('hduor',c);remote(b,c)}else enter(b,errT(j))}
-function enter(b,msg){b.innerHTML=`<h2>Duo</h2><p>Saisissez le code à 6 chiffres affiché sur la télé, ou scannez son QR code avec l'appareil photo du téléphone.</p><input class="dcin" id="duoc" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="······" autocomplete="one-time-code"><p class="dst er" id="dmsg">${msg||''}</p><button class="btn" type="button" id="duog">Connecter</button>`;
+  const j=await post({a:'send',code:c,cmd:k});if(!j.ok){const m=$('#dmsg');if(j.s===404){ls.s('hduor',null);b.onclick=null;enter(b,'Ce code a été révoqué ou a expiré. Saisissez le nouveau code.')}else if(m){m.className='dst er';m.textContent=errT(j)}}}}
+async function join(b,c){if(c===host){enter(b,'C\'est le code de cet appareil : saisissez celui de l\'autre.');return}
+ const j=await post({a:'join',code:c});if(j.ok){ls.s('hduor',c);remote(b,c)}else enter(b,errT(j))}
+function enter(b,msg){const pad=IS?`<div class="dnum">${[1,2,3,4,5,6,7,8,9].map(n=>`<button type="button" data-k="${n}">${n}</button>`).join('')}<button type="button" data-k="del">⌫</button><button type="button" data-k="0">0</button><button type="button" data-k="ok">OK</button></div>`:'';
+ b.innerHTML=`<p>Saisissez le code à 6 chiffres affiché sur l'autre appareil${IS?'':', ou scannez son QR code avec l\'appareil photo du téléphone'}.</p><input class="dcin" id="duoc" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="······" autocomplete="one-time-code"${IS?' readonly':''}>${pad}<p class="dst er" id="dmsg">${msg||''}</p><div class="dact"><button class="btn" type="button" id="duog">Connecter</button></div>`;
  const i=$('#duoc'),g=()=>{const v=i.value.replace(/\D/g,'');if(v.length!==6){$('#dmsg').textContent='Le code doit faire 6 chiffres.';return}join(b,v)};
- i.oninput=()=>{i.value=i.value.replace(/\D/g,'');if(i.value.length===6)g()};$('#duog').onclick=g}
+ i.oninput=()=>{i.value=i.value.replace(/\D/g,'');if(i.value.length===6)g()};$('#duog').onclick=g;
+ b.onclick=e=>{const x=e.target.closest('[data-k]');if(!x)return;const k=x.dataset.k;if(k==='del')i.value=i.value.slice(0,-1);else if(k==='ok')g();else if(i.value.length<6){i.value+=k;if(i.value.length===6)g()}}}
 
-window.duoOpen=function(){let d=$('#duo');
+/* -- écran Duo -- */
+function duoUI(tab){const b=$('#duob');if(!IS)tab='ctl';ls.s('hduotab',tab);
+ b.innerHTML=`<h2>Duo</h2>${IS?`<div class="dtabs"><button type="button" data-tab="host" class="${tab==='host'?'a':''}">Mon code</button><button type="button" data-tab="ctl" class="${tab==='ctl'?'a':''}">Piloter une télé</button></div>`:''}<div id="dbody"></div>`;
+ const t=b.querySelector('.dtabs');if(t)t.onclick=e=>{const x=e.target.closest('[data-tab]');if(x)duoUI(x.dataset.tab)};
+ const body=$('#dbody');if(tab==='host')showHost(body);else{const c=ls.g('hduor');if(c)join(body,c);else enter(body)}}
+window.duoOpen=function(tab){let d=$('#duo');
  if(!d){d=document.createElement('div');d.id='duo';d.setAttribute('role','dialog');d.setAttribute('aria-label','Duo');d.innerHTML='<button class="x" type="button" onclick="duoClose()" aria-label="Fermer">✕</button><div id="duob"></div>';$('#app').appendChild(d)}
- d.classList.add('on');const b=$('#duob');b.onclick=null;
- if(IS)showHost(b);else{const c=ls.g('hduor');if(c)join(b,c);else enter(b)}};
-window.duoClose=function(){const d=$('#duo');if(d)d.classList.remove('on');reset()};
+ d.classList.add('on');duoUI(tab||ls.g('hduotab')||(IS?'host':'ctl'));if(host)sched()};
+window.duoClose=function(){const d=$('#duo');if(d)d.classList.remove('on');reset();if(host)sched()};
 
 /* Entrée « Duo » dans les Paramètres */
 const _set=window.settings;window.settings=function(){_set.apply(this,arguments);
  const h=Q('h3',$('#s17')).find(x=>x.textContent.trim()==='Compte');
- if(h)h.insertAdjacentHTML('beforebegin',`<h3>Duo</h3><div class="it" onclick="duoOpen()"><b style="display:flex;align-items:center;gap:10px;font-weight:600">${RI}Duo <small style="color:var(--mut);font-weight:400">${IS?'Afficher le code sur la télé':'Télécommande du téléphone'}</small></b><span>›</span></div>`)};
+ if(h)h.insertAdjacentHTML('beforebegin',`<h3>Duo</h3><div class="it" onclick="duoOpen()"><b style="display:flex;align-items:center;gap:10px;font-weight:600">${RI}Duo <small style="color:var(--mut);font-weight:400">${IS?'Mon code · piloter une télé':'Télécommande du téléphone'}</small></b><span>›</span></div>`)};
 
-/* Reprise automatique : la télé reprend son code, le téléphone ouvre Duo via le QR code (?duo=123456) */
-if(IS&&ls.g('hduoh'))hostStart().catch(()=>{});
+/* Reprise automatique : la télé reprend son code personnel ; le téléphone ouvre Duo via le QR code (?duo=123456) */
+if(IS&&ls.g('hduoh')&&ls.g('hduos'))hostStart().catch(()=>{});
 const dp=new URLSearchParams(location.search).get('duo');
-if(dp&&/^\d{6}$/.test(dp)&&!IS){history.replaceState(null,'',location.pathname);setTimeout(()=>{duoOpen();join($('#duob'),dp)},2800)}
+if(dp&&/^\d{6}$/.test(dp)&&!IS){history.replaceState(null,'',location.pathname);setTimeout(()=>{duoOpen('ctl');join($('#dbody'),dp)},2800)}
 })();
