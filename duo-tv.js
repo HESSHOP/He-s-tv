@@ -92,6 +92,13 @@ body.tv .pw.fs .pi>:not(.stg):not(.wmk){zoom:var(--tk,1)}
 .drs button{flex:1;height:46px;border:0;border-radius:26px;background:none;color:#fff;font-size:14px;cursor:pointer}
 .drs .a{background:#00b4f0;color:#04283a;font-weight:700}
 .drm .dst{margin:0;min-height:16px}
+/* Lecteur sur télé : hauteur 16/9 même sans aspect-ratio, plein écran sans transformation ni échelle 1200x675 */
+.pw:not(.fs):not(.fsx)::before{content:"";display:block;padding-top:56.25%}
+body.tv .pw.fs .stg,body.tv .pw.fsx .stg{top:0;left:0;right:0;bottom:0;width:100%;height:100%;transform:none}
+body.tvfs #app{transform:none!important;width:100vw!important;height:100vh!important}
+body.tvfs .pw.fsx{position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;z-index:99999;aspect-ratio:auto}
+body.tvfs .pw.fsx .pi>:not(.stg):not(.wmk){zoom:var(--tk,1)}
+body.tvfs .scr.on,body.tvfs .scr.on>*{animation:none!important;transform:none!important;translate:none!important}
 `;document.head.appendChild(css);
 
 /* ===== 3. Navigation télécommande (flèches, OK, retour) ===== */
@@ -120,7 +127,7 @@ function back(){if(open('ppnl')){closePP();return 1}if(open('duo')){duoClose();r
  if(isBig(P())){fsT();return 1}if(open('hp')){closeHp();return 1}
  if($('#pl').style.display==='flex'){closePl();return 1}if(BK[cur]){go(BK[cur]);return 1}return 0}
 document.addEventListener('keydown',e=>{
- if(!(IS||host))return;
+ if(!(IS||host||document.body.classList.contains('tv')))return;
  const k=e.key,kc=e.keyCode,tg=(e.target&&e.target.tagName)||'';
  const up=k==='ArrowUp',dn=k==='ArrowDown',lf=k==='ArrowLeft',rt=k==='ArrowRight',ok=k==='Enter'||k===' '||kc===13;
  if(/INPUT|TEXTAREA|SELECT/.test(tg)){if(!(ok||k==='Escape'||up||dn))return;if(tg!=='SELECT'||k==='Escape')e.target.blur();if(!up&&!dn)return}
@@ -139,14 +146,20 @@ document.addEventListener('keydown',e=>{
 },true);
 
 /* ===== 4. Branchements sur le script principal ===== */
-const _go=window.go;window.go=function(){reset();return _go.apply(this,arguments)};
+const _go=window.go;window.go=function(){reset();const r=_go.apply(this,arguments);tvfsSync();return r};
+/* Plein écran en mise en page « grand écran » : jamais l'API native (elle casse l'affichage sur les navigateurs de box/télé).
+   Le lecteur se met en plein cadre ; l'échelle de l'appli est suspendue le temps du plein écran. */
+function tvfsSync(){const p=P();document.body.classList.toggle('tvfs',!!(p&&p.classList.contains('fsx')&&document.body.classList.contains('tv')&&cur==='s18'))}
+const _fsT=window.fsT;window.fsT=function(){const p=P();
+ if(!p||!document.body.classList.contains('tv')||fsEl())return _fsT.apply(this,arguments);
+ p.classList.toggle('fsx');tvfsSync();fit();setTimeout(fit,60);setTimeout(fit,300)};
 /* Chaînes en direct : en mode TV, la liste passe dans une colonne à droite du lecteur */
 const _live=window.live;window.live=function(){const r=_live.apply(this,arguments);tvCols();return r};
-/* Sur télé : une chaîne choisie s'ouvre directement en plein écran */
+/* Sur télé (ou mise en page grand écran) : une chaîne choisie s'ouvre directement en plein écran */
 const _w=window.watchUrl;window.watchUrl=function(){const r=_w.apply(this,arguments);
- if(IS){const p=P();if(p&&!fsEl()&&!p.classList.contains('fsx'))fsT()}return r};
+ if(IS||document.body.classList.contains('tv')){const p=P();if(p&&!fsEl()&&!p.classList.contains('fsx'))fsT()}return r};
 /* Bandeau EN COURS, bouton Programme et panneau : suivent le lecteur en plein écran */
-setInterval(()=>{const p=P(),h=isBig(p)?p.querySelector('.pi'):null;
+setInterval(()=>{tvfsSync();const p=P(),h=isBig(p)?p.querySelector('.pi'):null;
  [['pgband','#stk'],['pbtn','#app'],['ppnl','#app']].forEach(([id,home])=>{const e=document.getElementById(id),t=h||$(home);if(e&&t&&e.parentElement!==t)t.appendChild(e)})},700);
 
 /* ===== 5. Duo : télécommande entre appareils (télé ↔ téléphone, télé ↔ télé, téléphone ↔ téléphone) =====
@@ -293,7 +306,7 @@ function remote(b,c){const d=$('#duo');if(d)d.classList.add('rem');
   b.innerHTML=`<div class="drm">
    <div class="drh"><button type="button" class="drof" data-c="_off" aria-label="Déconnecter">⏻</button><span>Télécommande</span><i></i></div>
    <div class="drt"><button type="button" data-c="back">↩<small>Retour</small></button><button type="button" data-c="home">⌂<small>Accueil</small></button><button type="button" data-c="prog">☰<small>Programme</small></button></div>
-   <div class="drt"><button type="button" data-c="fav">★<small>Favoris</small></button><button type="button" data-c="rnd">🎲<small>Chaîne FR au hasard</small></button></div>
+   <div class="drt"><button type="button" data-c="fav">★<small>Favoris</small></button><button type="button" data-c="rnd">🎲<small>RANDOM</small></button></div>
    ${mode==='nav'?`<div class="drp"><button type="button" class="a u" data-c="up" aria-label="Haut">${CHV}</button><button type="button" class="a d" data-c="down" aria-label="Bas">${CHV}</button><button type="button" class="a l" data-c="left" aria-label="Gauche">${CHV}</button><button type="button" class="a r" data-c="right" aria-label="Droite">${CHV}</button><button type="button" class="ok" data-c="ok">OK</button></div>
    <div class="drch"><button type="button" data-c="chp" aria-label="Chaîne précédente">−</button><span>Chaîne</span><button type="button" data-c="chn" aria-label="Chaîne suivante">+</button></div>`
    :`<div class="drpad" id="dpad"><p>Glissez pour naviguer<br>Touchez pour valider</p></div>`}
