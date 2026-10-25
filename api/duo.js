@@ -10,7 +10,8 @@ const crypto = require('crypto');
 const find = (re) => { const k = Object.keys(process.env).find((n) => re.test(n)); return k ? process.env[k] : undefined; };
 const U = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || find(/REST_(API_)?URL$/);
 const K = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || find(/REST_(API_)?TOKEN$/);
-const CMDS = ['up', 'down', 'left', 'right', 'ok', 'back', 'home', 'chp', 'chn', 'prog'];
+const CMDS = ['up', 'down', 'left', 'right', 'ok', 'back', 'home', 'chp', 'chn', 'prog', 'fav', 'rnd'];
+const CH = /^ch:[iv][^\s'"<>\\]{1,100}$/; // ch:<identifiant de chaîne> = ouvrir cette chaîne sur l'hôte
 const TTL = 30 * 24 * 3600; // le code personnel reste valable 30 jours, renouvelé à chaque utilisation
 
 const R = async (cmds) => {
@@ -63,11 +64,12 @@ module.exports = async (req, res) => {
     }
     // Contrôleur : envoyer une commande
     if (b.a === 'send') {
-      if (!CMDS.includes(b.cmd)) return out(res, 400, { ok: false, error: 'cmd' });
+      const cmd = String(b.cmd || '');
+      if (!CMDS.includes(cmd) && !CH.test(cmd)) return out(res, 400, { ok: false, error: 'cmd' });
       if (await limited(ip, 's', 180)) return out(res, 429, { ok: false, error: 'rate' });
       const [s] = await R([['GET', key]]);
       if (!s) return out(res, 404, { ok: false, error: 'unknown' });
-      await R([['RPUSH', 'duo:q:' + s, b.cmd], ['LTRIM', 'duo:q:' + s, -30, -1], ['EXPIRE', 'duo:q:' + s, 60]]);
+      await R([['RPUSH', 'duo:q:' + s, cmd], ['LTRIM', 'duo:q:' + s, -30, -1], ['EXPIRE', 'duo:q:' + s, 60]]);
       return out(res, 200, { ok: true });
     }
     // Hôte : récupérer les commandes (le secret est requis ; la file est nommée d'après le secret,
