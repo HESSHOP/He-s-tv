@@ -419,14 +419,15 @@ const VLANG={france:'fra',germany:'deu',spain:'spa','united kingdom':'eng',italy
 const LNAME={fra:'Français',eng:'Anglais',deu:'Allemand',spa:'Espagnol',ita:'Italien',por:'Portugais',ara:'Arabe',nld:'Néerlandais',tur:'Turc',pol:'Polonais',ron:'Roumain',rus:'Russe',sqi:'Albanais',bul:'Bulgare',hin:'Hindi',fas:'Persan'};
 const lname=l=>{if(l==='_')return 'Autres langues';if(LNAME[l])return LNAME[l];try{const n=new Intl.DisplayNames(['fr'],{type:'language'}).of(l);return n.charAt(0).toUpperCase()+n.slice(1)}catch(e){return l.toUpperCase()}};
 /* Format des chaînes : c[0]=id ("i12" = iptv, "v12" = vavoo), c[1]=nom, c[2]=groupe, c[3]=logo */
+const LERR={};const lerrT=e=>e&&e.name==='AbortError'?'délai dépassé':String((e&&e.message)||e);
 const fj=(u,ms)=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);return fetch(u,{signal:c.signal}).finally(()=>clearTimeout(t))};
 const nk1=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
-async function iptvList(){try{const r=await fj('/api/iptv?list=1&t='+Date.now(),45000);if(!r.ok)throw 0;const j=await r.json();
+async function iptvList(){try{const r=await fj('/api/iptv?list=1&t='+Date.now(),45000);if(!r.ok)throw new Error('http '+r.status);const j=await r.json();
  const l=(j.channels||[]).map(x=>['i'+x.id,x.name||'',x.group||'',x.logo||'',x.fr===0?1:0,x.lang||'']);
- return l.length?{l,g:(j.groups||[])}:null}catch(e){return null}}
-async function vavooList(){try{const r=await fj('/vavoo?list=1&t='+Date.now(),45000);if(!r.ok)throw 0;const j=await r.json();
+ if(!l.length)LERR.i='liste vide';return l.length?{l,g:(j.groups||[])}:null}catch(e){LERR.i=lerrT(e);return null}}
+async function vavooList(){try{const r=await fj('/vavoo?list=1&t='+Date.now(),45000);if(!r.ok)throw new Error('http '+r.status);const j=await r.json();
  const l=(j.channels||[]).map(x=>['v'+x.id,x.name||'',x.group||'',x.logo||'',0,VLANG[String(x.group||'').toLowerCase()]||'']);
- return l.length?{l,g:(j.groups||[])}:null}catch(e){return null}}
+ if(!l.length)LERR.v='liste vide';return l.length?{l,g:(j.groups||[])}:null}catch(e){LERR.v=lerrT(e);return null}}
 async function logoMap(){try{const r=await fj('/api/iptv?logos=1',45000);if(!r.ok)throw 0;return await r.json()}catch(e){return {}}}
 async function liveList(){
  const [a,b,lm]=await Promise.all([iptvList(),vavooList(),logoMap()]);
@@ -437,6 +438,7 @@ async function liveList(){
  [...(b?b.l:[]),...(a?a.l:[])].forEach(c=>{const k=bk(c[1]);if(!k)return;if(!c[3])c[3]=lm[k]||'';if(!c[3])return;
   const q=qrk(c),p=best.get(k);if(!p||q<p.q)best.set(k,{c,q})});
  VCH=[...best.values()].map(x=>x.c);VGR=[];
+ window.LNOLOGO=VCH.length?'':'aucune chaîne avec logo (logos connus : '+Object.keys(lm).length+')';
  return VCH.length>0}
 function chips(){const e=$('#lgr');if(!e)return;const n={};VCH.forEach(c=>{const k=c[5]||'_';n[k]=(n[k]||0)+1});
  const ks=Object.keys(n).sort((x,y)=>x==='fra'?-1:y==='fra'?1:x==='_'?1:y==='_'?-1:n[y]-n[x]);
@@ -449,7 +451,7 @@ async function live(){stopLive();
  $('#s18').innerHTML=`<div class="stk" id="stk"><div class="hd"><b style="font-size:20px">Chaînes en direct</b><span class="lv">● EN DIRECT</span></div><div class="wide" id="lp" style="margin-top:8px"><div style="aspect-ratio:16/9;background:linear-gradient(135deg,var(--card),#000);display:grid;place-items:center;border-radius:12px;color:var(--mut);font-size:13px">Chargement des chaînes… (jusqu'à 30 s au premier lancement)</div></div><div class="pg" id="pgband"><span class="pgb">EN COURS</span><span class="pgt" id="pgt">Programme indisponible</span><span class="pgh" id="pgh">--:--</span></div></div><div class="chipbar" id="lgr"></div><div class="chipbar" id="lcat" style="padding-top:0"></div><div class="sb" style="margin-top:4px"><svg class="ic" viewBox="0 0 24 24" style="flex:none"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg><input id="vq" placeholder="Rechercher une chaîne…" aria-label="Rechercher une chaîne"></div><div id="vlist"></div>`;
  $('#vq').oninput=e=>{VQ=e.target.value;drawV()};
  const ok=await liveList();
- if(!ok){$('#lp').innerHTML='<div style="aspect-ratio:16/9;display:grid;place-items:center;color:var(--mut);font-size:13px">—</div>';$('#vlist').innerHTML='<p class="rt" style="max-width:none">Chaînes indisponibles pour le moment.</p><button class="btn sm" style="width:auto;padding:0 22px;margin:12px auto 0;display:block" onclick="live()">Réessayer</button>';return}
+ if(!ok){$('#lp').innerHTML='<div style="aspect-ratio:16/9;display:grid;place-items:center;color:var(--mut);font-size:13px">—</div>';$('#vlist').innerHTML='<p class="rt" style="max-width:none">Chaînes indisponibles pour le moment.</p><p class="rt" style="max-width:none;padding:0 16px;font-size:11px">Détail : iptv '+(LERR.i||'ok')+' · vavoo '+(LERR.v||'ok')+(window.LNOLOGO?' · '+window.LNOLOGO:'')+'</p><button class="btn sm" style="width:auto;padding:0 22px;margin:12px auto 0;display:block" onclick="live()">Réessayer</button>';return}
  chips();catChips();$('#lp').innerHTML='';
  drawV()}
 const CATL=['Animés','Jeunesse','Novelas & Séries','Rire & Comédie','Action','Gabon','Sport','Infos','Documentaires','Films & séries','Musique','Religion','Autres'];
