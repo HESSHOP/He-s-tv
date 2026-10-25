@@ -46,7 +46,11 @@ body.tv .pw.fs .pi>:not(.stg):not(.wmk){zoom:var(--tk,1)}
 #duo.on{display:flex}#duo h2{margin:0 0 8px;font-size:22px}#duo p{max-width:300px;margin:6px auto}
 #duo .x{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;border:0;background:var(--card);color:var(--txt);font-size:16px;cursor:pointer}
 #duob{width:100%;display:flex;flex-direction:column;align-items:center}
-.qrb{background:#fff;padding:8px;border-radius:12px;margin:12px 0;line-height:0}.qrb img{width:190px;height:190px;image-rendering:pixelated}
+.qrb{background:#fff;padding:10px;border-radius:14px;margin:12px 0;line-height:0}.qrb img{width:240px;max-width:100%;height:auto;display:block}
+#scan{position:absolute;top:0;left:0;right:0;bottom:0;z-index:80;background:#000;display:none;flex-direction:column;align-items:center;justify-content:flex-end;padding:0 24px 40px}#scan.on{display:flex}
+#scan video{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover}
+#scan .sf{position:absolute;top:50%;left:50%;width:62%;max-width:320px;aspect-ratio:1;transform:translate(-50%,-60%);border:3px solid #fff;border-radius:20px;box-shadow:0 0 0 999px #0008}
+#scan p{position:relative;color:#fff;margin-bottom:12px;text-shadow:0 2px 6px #000}#scan .btn{position:relative;width:auto;padding:0 28px}
 .dcode{font-size:42px;font-weight:800;letter-spacing:6px;margin:10px 0 4px;font-variant-numeric:tabular-nums}
 .dst{font-size:13px;color:var(--mut)}.dst.ok{color:#1db954}.dst.er{color:#ff5252}
 .dpad{display:grid;grid-template-columns:repeat(3,74px);grid-template-rows:repeat(3,74px);gap:10px;margin:16px 0}
@@ -87,7 +91,8 @@ const BK={s19:'s12',s17:'s12',s12:'s18',s8:'s7',s7:'s6',s10:'s7',s9:'s8'};
 function back(){if(open('ppnl')){closePP();return 1}if(open('duo')){duoClose();return 1}
  if(isBig(P())){fsT();return 1}if(open('hp')){closeHp();return 1}
  if($('#pl').style.display==='flex'){closePl();return 1}if(BK[cur]){go(BK[cur]);return 1}return 0}
-if(IS)document.addEventListener('keydown',e=>{
+document.addEventListener('keydown',e=>{
+ if(!(IS||host))return;
  const k=e.key,kc=e.keyCode,tg=(e.target&&e.target.tagName)||'';
  const up=k==='ArrowUp',dn=k==='ArrowDown',lf=k==='ArrowLeft',rt=k==='ArrowRight',ok=k==='Enter'||k===' '||kc===13;
  if(/INPUT|TEXTAREA|SELECT/.test(tg)){if(!(ok||k==='Escape'||up||dn))return;if(tg!=='SELECT'||k==='Escape')e.target.blur();if(!up&&!dn)return}
@@ -117,14 +122,80 @@ const _w=window.watchUrl;window.watchUrl=function(){const r=_w.apply(this,argume
 setInterval(()=>{const p=P(),h=isBig(p)?p.querySelector('.pi'):null;
  [['pgband','#stk'],['pbtn','#app'],['ppnl','#app']].forEach(([id,home])=>{const e=document.getElementById(id),t=h||$(home);if(e&&t&&e.parentElement!==t)t.appendChild(e)})},700);
 
-/* ===== 5. Duo : télécommande entre appareils =====
-   Hôte = appareil qui reçoit les commandes (une télé). Contrôleur = appareil qui les envoie (téléphone ou autre télé).
-   Chaque télé a SON code personnel (+ un secret gardé sur l'appareil) qu'elle peut révoquer à tout moment. */
+/* ===== 5. Duo : télécommande entre appareils (télé ↔ téléphone, télé ↔ télé, téléphone ↔ téléphone) =====
+   Hôte = appareil qui reçoit les commandes. Contrôleur = appareil qui les envoie.
+   Chaque appareil a SON code personnel (+ un secret gardé sur l'appareil), SON code QR et SON style de QR ; il peut révoquer son code. */
 const RI='<svg class="ic2" viewBox="0 0 24 24" style="width:22px;height:22px;stroke:var(--red)"><rect x="8" y="2" width="8" height="20" rx="3"/><circle cx="12" cy="8" r="1.6"/><path d="M10 13h4M10 17h4"/></svg>';
 const post=async b=>{let j={};try{const r=await fetch('/api/duo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});try{j=await r.json()}catch(e){}j.s=r.status}catch(e){j={ok:false,s:0}}return j};
 const errT=j=>j.s===503?'Duo n\'est pas encore activé sur le serveur (base Redis non configurée).':j.s===429?'Trop d\'essais, patientez une minute.':j.s===404?'Code introuvable, révoqué ou expiré.':'Connexion impossible pour le moment.';
-const qrLib=()=>window.qrcode?Promise.resolve():new Promise((ok,ko)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';s.onload=ok;s.onerror=ko;document.head.appendChild(s)});
+const jsLib=(u,t)=>window[t]?Promise.resolve():new Promise((ok,ko)=>{const x=document.createElement('script');x.src=u;x.onload=ok;x.onerror=ko;document.head.appendChild(x)});
+const qrLib=()=>jsLib('https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js','qrcode');
+const jsqrLib=()=>jsLib('https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js','jsQR');
 const kev=(k,kc)=>document.dispatchEvent(new KeyboardEvent('keydown',{key:k,keyCode:kc,bubbles:true,cancelable:true}));
+
+/* -- styles de code QR : chaque appareil a le sien (choisi d'après son code, modifiable) -- */
+const QSTY=[['classic','Classique'],['dots','Points'],['hex','Alvéoles'],['half','Demi-teinte'],['tv','Télé']];
+const qStyle=c=>{const v=ls.g('hduosty');return QSTY.some(x=>x[0]===v)?v:QSTY[(+c||0)%QSTY.length][0]};
+function qrMatrix(t){const q=qrcode(0,'H');q.addData(t);q.make();const n=q.getModuleCount(),m=[];for(let r=0;r<n;r++){m[r]=[];for(let c=0;c<n;c++)m[r][c]=q.isDark(r,c)}return m}
+const isEye=(r,c,n)=>(r<7&&c<7)||(r<7&&c>=n-7)||(r>=n-7&&c<7);
+function rr(g,x,y,w,h,r,f){g.beginPath();if(g.roundRect)g.roundRect(x,y,w,h,r);else{g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}g.fillStyle=f;g.fill()}
+/* Demi-teinte : chaque module = 3×3 points ; le point central porte la donnée, les autres dessinent le logo HE'S TV */
+function half(g,m,x0,y0,u){const n=m.length,N=n*3,s=u/3,K='#111',o=document.createElement('canvas');o.width=o.height=N;const h=o.getContext('2d');
+ h.fillStyle='#fff';h.fillRect(0,0,N,N);
+ const gr=h.createRadialGradient(N/2,N/2,N*.04,N/2,N/2,N*.42);gr.addColorStop(0,'#000');gr.addColorStop(.7,'#333');gr.addColorStop(1,'#bbb');
+ h.fillStyle=gr;h.beginPath();h.arc(N/2,N/2,N*.42,0,6.2832);h.fill();
+ h.fillStyle='#fff';h.font='bold '+Math.round(N*.36)+'px system-ui,sans-serif';h.textAlign='center';h.textBaseline='middle';h.fillText('H',N/2,N/2+N*.02);
+ const d=h.getImageData(0,0,N,N).data,B=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5];
+ for(let r=0;r<n;r++)for(let c=0;c<n;c++){
+  const fixed=(r<8&&c<8)||(r<8&&c>=n-8)||(r>=n-8&&c<8)||r===6||c===6||(n>=25&&r>=n-9&&r<=n-5&&c>=n-9&&c<=n-5);
+  const x=x0+c*u,y=y0+r*u;
+  if(fixed){if(m[r][c]){g.fillStyle=K;g.fillRect(x,y,u,u)}continue}
+  for(let i=0;i<3;i++)for(let j=0;j<3;j++){
+   let dark;if(i===1&&j===1)dark=m[r][c];else{const px=c*3+j,py=r*3+i,lum=d[(py*N+px)*4];dark=lum<128+(B[(py%4)*4+(px%4)]-7.5)*9}
+   if(dark){g.fillStyle=K;g.fillRect(x+j*s,y+i*s,s+.5,s+.5)}}}}
+function paint(g,m,x0,y0,u,st){const n=m.length,K='#111',AC='#b71c1c';
+ if(st==='half')return half(g,m,x0,y0,u);
+ const round=st==='hex'||st==='tv',dots=st==='dots';
+ [[0,0],[0,n-7],[n-7,0]].forEach(([r,c])=>{const x=x0+c*u,y=y0+r*u;
+  if(round){rr(g,x,y,7*u,7*u,2.2*u,K);rr(g,x+u,y+u,5*u,5*u,1.4*u,'#fff');rr(g,x+2*u,y+2*u,3*u,3*u,.9*u,AC)}
+  else{g.fillStyle=K;g.fillRect(x,y,7*u,7*u);g.fillStyle='#fff';g.fillRect(x+u,y+u,5*u,5*u);g.fillStyle=dots?K:AC;g.fillRect(x+2*u,y+2*u,3*u,3*u)}});
+ g.fillStyle=K;
+ for(let r=0;r<n;r++)for(let c=0;c<n;c++){if(!m[r][c]||isEye(r,c,n))continue;const x=x0+c*u,y=y0+r*u;
+  if(dots)g.fillRect(x+u*.19,y+u*.19,u*.62,u*.62);
+  else if(round){g.beginPath();g.arc(x+u/2,y+u/2,u*.54,0,6.2832);g.fill();
+   if(c+1<n&&m[r][c+1]&&!isEye(r,c+1,n))g.fillRect(x+u/2,y+u*.16,u,u*.68);
+   if(r+1<n&&m[r+1][c]&&!isEye(r+1,c,n))g.fillRect(x+u*.16,y+u/2,u*.68,u)}
+  else g.fillRect(x,y,u,u)}}
+function qrCanvas(text,st,size){const m=qrMatrix(text),n=m.length,cv=document.createElement('canvas');let g;
+ if(st==='tv'){/* petite télé avec antennes et son étiquette */
+  const u=Math.floor(size*.74/(n+4)),su=u*(n+4),W=size,by=Math.round(size*.1),bx=Math.round(size*.04),bh=su+Math.round(size*.2),H=Math.round(by+bh+size*.04);
+  cv.width=W;cv.height=H;g=cv.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,W,H);
+  g.strokeStyle='#111';g.lineWidth=size*.014;g.lineCap='round';g.beginPath();g.moveTo(W*.4,by);g.lineTo(W*.3,by-size*.08);g.moveTo(W*.6,by);g.lineTo(W*.7,by-size*.08);g.stroke();
+  rr(g,bx,by,W-2*bx,bh,size*.07,'#111');
+  const sx=(W-su)/2,sy=by+size*.04;rr(g,sx,sy,su,su,size*.04,'#fff');paint(g,m,sx+2*u,sy+2*u,u,'tv');
+  const ly=sy+su+size*.025;rr(g,W*.3,ly,W*.4,size*.1,size*.03,'#d32f2f');
+  g.fillStyle='#fff';g.font='bold '+Math.round(size*.062)+'px system-ui,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText("HE'S TV",W/2,ly+size*.052);return cv}
+ const pad=2,u=Math.floor(size/(n+pad*2)),S=u*(n+pad*2);cv.width=cv.height=S;g=cv.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,S,S);paint(g,m,pad*u,pad*u,u,st);return cv}
+const qrBox=(c,st)=>{try{return `<img alt="Code QR personnel" src="${qrCanvas(location.origin+'/?duo='+c,st,480).toDataURL('image/png')}">`}catch(e){return '<p class="dst er">Code QR indisponible (réseau)</p>'}};
+
+/* -- scanner de code QR (caméra) : détecteur natif du navigateur, sinon bibliothèque jsQR -- */
+let scStream=null,scT=0;
+const codeOf=t=>{t=String(t||'').trim();if(/^\d{6}$/.test(t))return t;try{const c=new URL(t).searchParams.get('duo');if(c&&/^\d{6}$/.test(c))return c}catch(e){}return ''};
+function scanClose(){clearInterval(scT);if(scStream){scStream.getTracks().forEach(t=>t.stop());scStream=null}const ov=$('#scan');if(ov)ov.classList.remove('on')}
+async function scanOpen(ok,err){let ov=$('#scan');
+ if(!ov){ov=document.createElement('div');ov.id='scan';ov.innerHTML='<video playsinline muted></video><div class="sf"></div><p>Placez le code QR dans le cadre</p><button class="btn g" type="button" id="scx">Annuler</button>';$('#app').appendChild(ov)}
+ ov.classList.add('on');$('#scx').onclick=scanClose;const v=ov.querySelector('video');
+ try{scStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false})}catch(e){scanClose();err('Caméra refusée ou indisponible : autorisez-la dans le navigateur, ou saisissez le code.');return}
+ v.srcObject=scStream;try{await v.play()}catch(e){}
+ let det=null;if(window.BarcodeDetector){try{det=new BarcodeDetector({formats:['qr_code']})}catch(e){}}
+ if(!det){try{await jsqrLib()}catch(e){scanClose();err('Scanner indisponible (réseau) : saisissez le code.');return}}
+ const cv=document.createElement('canvas'),x=cv.getContext('2d');let busy=0;
+ scT=setInterval(async()=>{if(busy||v.readyState<2)return;busy=1;
+  try{let t='';
+   if(det){const r=await det.detect(v);t=r[0]?r[0].rawValue:''}
+   else{const k=Math.min(1,480/v.videoWidth);cv.width=Math.round(v.videoWidth*k);cv.height=Math.round(v.videoHeight*k);x.drawImage(v,0,0,cv.width,cv.height);const d=x.getImageData(0,0,cv.width,cv.height),r=jsQR(d.data,d.width,d.height);t=r?r.data:''}
+   const c=codeOf(t);if(c){scanClose();ok(c)}}catch(e){}
+  busy=0},250)}
 
 /* -- hôte : code personnel, réception et exécution des commandes -- */
 let host=null,sec=null,joined=false,pt=0,lastCmd=0,pn=0;
@@ -148,46 +219,50 @@ async function hostStart(){if(host)return host;const c=ls.g('hduoh'),s2=ls.g('hd
  const j=await post({a:'create'});if(!j.ok)throw j;host=j.code;sec=j.secret;joined=false;ls.s('hduoh',host);ls.s('hduos',sec);sched();return host}
 async function revokeHost(){const j=await post({a:'revoke',code:host,secret:sec});if(j.ok||j.s===404){dropHost();return true}return false}
 async function showHost(b){b.innerHTML='<p class="dst">Chargement de votre code…</p>';b.onclick=null;
- try{const c=await hostStart();let qr='';
-  try{await qrLib();const q=qrcode(0,'M');q.addData(location.origin+'/?duo='+c);q.make();qr=`<div class="qrb">${q.createImgTag(6,0)}</div>`}catch(e){}
-  b.innerHTML=`<p>Votre code personnel. Scannez-le avec l'appareil photo d'un téléphone, ou saisissez-le sur un autre appareil : Paramètres › Duo${IS?' › Piloter une télé':''}.</p>${qr}<div class="dcode">${c.slice(0,3)} ${c.slice(3)}</div><p class="dst" id="dst"></p><div class="dact"><button class="btn g" type="button" data-act="revoke">Révoquer ce code</button></div>`;upd();
-  let armT=0;b.onclick=async e=>{const x=e.target.closest('[data-act]');if(!x)return;
+ try{const c=await hostStart();try{await qrLib()}catch(e){}const st=qStyle(c);
+  b.innerHTML=`<p>Votre code QR personnel. Faites-le scanner par un autre appareil (Duo › Scanner), ou donnez-lui le code.</p><div class="qrb">${qrBox(c,st)}</div><div class="dcode">${c.slice(0,3)} ${c.slice(3)}</div><p class="dst" id="dst"></p><p class="dst">Style de votre QR</p><div class="dtabs" style="flex-wrap:wrap;justify-content:center">${QSTY.map(([k,l])=>`<button type="button" data-sty="${k}" class="${k===st?'a':''}">${l}</button>`).join('')}</div><div class="dact"><button class="btn g" type="button" data-act="revoke">Révoquer ce code</button></div>`;upd();
+  let armT=0;b.onclick=async e=>{
+   const sy=e.target.closest('[data-sty]');
+   if(sy){ls.s('hduosty',sy.dataset.sty);const qb=b.querySelector('.qrb');if(qb)qb.innerHTML=qrBox(host,sy.dataset.sty);b.querySelectorAll('[data-sty]').forEach(z=>z.classList.toggle('a',z===sy));return}
+   const x=e.target.closest('[data-act]');if(!x)return;
    if(x.dataset.act==='revoke'){if(!x.dataset.arm){x.dataset.arm=1;x.textContent='Confirmer : déconnecter tous les appareils';clearTimeout(armT);armT=setTimeout(()=>{x.dataset.arm='';x.textContent='Révoquer ce code'},5000);return}
     x.disabled=true;if(await revokeHost()){b.onclick=null;b.innerHTML='<p class="dst ok">✓ Code révoqué. Les appareils connectés sont déconnectés.</p><div class="dact"><button class="btn" type="button" data-act="new">Générer un nouveau code</button></div>';b.onclick=ev=>{if(ev.target.closest('[data-act=new]'))showHost(b)}}else{x.disabled=false;x.dataset.arm='';x.textContent='Révoquer ce code';toast('Révocation impossible pour le moment')}}}}
  catch(j){b.innerHTML=`<p class="dst er">${errT(j||{})}</p>`}}
 
-/* -- contrôleur : saisie du code (ou scan), puis télécommande -- */
+/* -- contrôleur : scan ou saisie du code, puis télécommande -- */
 const RK=[['',''],['up','▲'],['',''],['left','◀'],['ok','OK'],['right','▶'],['',''],['down','▼'],['','']];
 function remote(b,c){b.innerHTML=`<p class="dst ok">✓ Connecté</p><div class="dpad">${RK.map(([k,l])=>k?`<button type="button" data-c="${k}"${k==='ok'?' class="ok"':''}>${l}</button>`:'<span></span>').join('')}</div><div class="dk"><button type="button" data-c="back">‹ Retour</button><button type="button" data-c="home">Accueil</button><button type="button" data-c="chp">Chaîne −</button><button type="button" data-c="chn">Chaîne +</button><button type="button" data-c="prog">Programme</button><button type="button" data-c="_off">Déconnecter</button></div><p class="dst" id="dmsg"></p>`;
  b.onclick=async e=>{const x=e.target.closest('[data-c]');if(!x)return;const k=x.dataset.c;
   if(k==='_off'){ls.s('hduor',null);b.onclick=null;enter(b);return}
   if(navigator.vibrate)navigator.vibrate(12);
-  const j=await post({a:'send',code:c,cmd:k});if(!j.ok){const m=$('#dmsg');if(j.s===404){ls.s('hduor',null);b.onclick=null;enter(b,'Ce code a été révoqué ou a expiré. Saisissez le nouveau code.')}else if(m){m.className='dst er';m.textContent=errT(j)}}}}
-async function join(b,c){if(c===host){enter(b,'C\'est le code de cet appareil : saisissez celui de l\'autre.');return}
+  const j=await post({a:'send',code:c,cmd:k});if(!j.ok){const m=$('#dmsg');if(j.s===404){ls.s('hduor',null);b.onclick=null;enter(b,'Ce code a été révoqué ou a expiré. Scannez ou saisissez le nouveau code.')}else if(m){m.className='dst er';m.textContent=errT(j)}}}}
+async function join(b,c){if(c===host){enter(b,'C\'est le code de cet appareil : scannez ou saisissez celui de l\'autre.');return}
  const j=await post({a:'join',code:c});if(j.ok){ls.s('hduor',c);remote(b,c)}else enter(b,errT(j))}
-function enter(b,msg){const pad=IS?`<div class="dnum">${[1,2,3,4,5,6,7,8,9].map(n=>`<button type="button" data-k="${n}">${n}</button>`).join('')}<button type="button" data-k="del">⌫</button><button type="button" data-k="0">0</button><button type="button" data-k="ok">OK</button></div>`:'';
- b.innerHTML=`<p>Saisissez le code à 6 chiffres affiché sur l'autre appareil${IS?'':', ou scannez son QR code avec l\'appareil photo du téléphone'}.</p><input class="dcin" id="duoc" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="······" autocomplete="one-time-code"${IS?' readonly':''}>${pad}<p class="dst er" id="dmsg">${msg||''}</p><div class="dact"><button class="btn" type="button" id="duog">Connecter</button></div>`;
+function enter(b,msg){const cam=!IS&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia;
+ const pad=IS?`<div class="dnum">${[1,2,3,4,5,6,7,8,9].map(n=>`<button type="button" data-k="${n}">${n}</button>`).join('')}<button type="button" data-k="del">⌫</button><button type="button" data-k="0">0</button><button type="button" data-k="ok">OK</button></div>`:'';
+ b.innerHTML=`<p>Scannez le code QR de l'autre appareil${IS?'':' avec la caméra'}, ou saisissez son code à 6 chiffres.</p>${cam?'<div class="dact"><button class="btn" type="button" data-act="scan">📷 Scanner un code QR</button></div>':''}<input class="dcin" id="duoc" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="······" autocomplete="one-time-code"${IS?' readonly':''}>${pad}<p class="dst er" id="dmsg">${msg||''}</p><div class="dact"><button class="btn${cam?' g':''}" type="button" id="duog">Connecter</button></div>`;
  const i=$('#duoc'),g=()=>{const v=i.value.replace(/\D/g,'');if(v.length!==6){$('#dmsg').textContent='Le code doit faire 6 chiffres.';return}join(b,v)};
  i.oninput=()=>{i.value=i.value.replace(/\D/g,'');if(i.value.length===6)g()};$('#duog').onclick=g;
- b.onclick=e=>{const x=e.target.closest('[data-k]');if(!x)return;const k=x.dataset.k;if(k==='del')i.value=i.value.slice(0,-1);else if(k==='ok')g();else if(i.value.length<6){i.value+=k;if(i.value.length===6)g()}}}
+ b.onclick=e=>{if(e.target.closest('[data-act=scan]')){scanOpen(code=>join(b,code),m=>{const d=$('#dmsg');if(d)d.textContent=m});return}
+  const x=e.target.closest('[data-k]');if(!x)return;const k=x.dataset.k;if(k==='del')i.value=i.value.slice(0,-1);else if(k==='ok')g();else if(i.value.length<6){i.value+=k;if(i.value.length===6)g()}}}
 
 /* -- écran Duo -- */
-function duoUI(tab){const b=$('#duob');if(!IS)tab='ctl';ls.s('hduotab',tab);
- b.innerHTML=`<h2>Duo</h2>${IS?`<div class="dtabs"><button type="button" data-tab="host" class="${tab==='host'?'a':''}">Mon code</button><button type="button" data-tab="ctl" class="${tab==='ctl'?'a':''}">Piloter une télé</button></div>`:''}<div id="dbody"></div>`;
- const t=b.querySelector('.dtabs');if(t)t.onclick=e=>{const x=e.target.closest('[data-tab]');if(x)duoUI(x.dataset.tab)};
+function duoUI(tab){const b=$('#duob');ls.s('hduotab',tab);
+ b.innerHTML=`<h2>Duo</h2><div class="dtabs"><button type="button" data-tab="host" class="${tab==='host'?'a':''}">Mon code QR</button><button type="button" data-tab="ctl" class="${tab==='ctl'?'a':''}">Scanner / saisir</button></div><div id="dbody"></div>`;
+ b.querySelector('.dtabs').onclick=e=>{const x=e.target.closest('[data-tab]');if(x){scanClose();duoUI(x.dataset.tab)}};
  const body=$('#dbody');if(tab==='host')showHost(body);else{const c=ls.g('hduor');if(c)join(body,c);else enter(body)}}
 window.duoOpen=function(tab){let d=$('#duo');
  if(!d){d=document.createElement('div');d.id='duo';d.setAttribute('role','dialog');d.setAttribute('aria-label','Duo');d.innerHTML='<button class="x" type="button" onclick="duoClose()" aria-label="Fermer">✕</button><div id="duob"></div>';$('#app').appendChild(d)}
  d.classList.add('on');duoUI(tab||ls.g('hduotab')||(IS?'host':'ctl'));if(host)sched()};
-window.duoClose=function(){const d=$('#duo');if(d)d.classList.remove('on');reset();if(host)sched()};
+window.duoClose=function(){scanClose();const d=$('#duo');if(d)d.classList.remove('on');reset();if(host)sched()};
 
 /* Entrée « Duo » dans les Paramètres */
 const _set=window.settings;window.settings=function(){_set.apply(this,arguments);
  const h=Q('h3',$('#s17')).find(x=>x.textContent.trim()==='Compte');
- if(h)h.insertAdjacentHTML('beforebegin',`<h3>Duo</h3><div class="it" onclick="duoOpen()"><b style="display:flex;align-items:center;gap:10px;font-weight:600">${RI}Duo <small style="color:var(--mut);font-weight:400">${IS?'Mon code · piloter une télé':'Télécommande du téléphone'}</small></b><span>›</span></div>`)};
+ if(h)h.insertAdjacentHTML('beforebegin',`<h3>Duo</h3><div class="it" onclick="duoOpen()"><b style="display:flex;align-items:center;gap:10px;font-weight:600">${RI}Duo <small style="color:var(--mut);font-weight:400">Mon code QR · scanner</small></b><span>›</span></div>`)};
 
-/* Reprise automatique : la télé reprend son code personnel ; le téléphone ouvre Duo via le QR code (?duo=123456) */
-if(IS&&ls.g('hduoh')&&ls.g('hduos'))hostStart().catch(()=>{});
+/* Reprise automatique : l'appareil reprend son code personnel ; un QR scanné avec l'appareil photo ouvre l'appli (?duo=123456) */
+if(ls.g('hduoh')&&ls.g('hduos'))hostStart().catch(()=>{});
 const dp=new URLSearchParams(location.search).get('duo');
-if(dp&&/^\d{6}$/.test(dp)&&!IS){history.replaceState(null,'',location.pathname);setTimeout(()=>{duoOpen('ctl');join($('#dbody'),dp)},2800)}
+if(dp&&/^\d{6}$/.test(dp)){history.replaceState(null,'',location.pathname);setTimeout(()=>{duoOpen('ctl');join($('#dbody'),dp)},2800)}
 })();
