@@ -15,8 +15,7 @@
 *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:#050505;font-family:system-ui,-apple-system,sans-serif;color:var(--txt);transition:background .4s}
 body{display:grid;place-items:center}
-#app{width:100%;max-width:400px;height:100%;max-height:840px;background:var(--bg);position:relative;overflow:hidden}
-@media(min-width:500px){#app{border-radius:38px;border:8px solid #222;box-shadow:0 20px 80px #000}}
+#app{width:100%;height:100%;background:var(--bg);position:relative;overflow:hidden}
 .scr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:34px 26px 30px;text-align:center;opacity:0;visibility:hidden;transform:translateX(28px);transition:.3s;overflow-y:auto}
 .scr.on{opacity:1;visibility:visible;transform:none}
 .logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:32px;letter-spacing:.5px}.logo svg{width:44px;height:44px}
@@ -420,14 +419,15 @@ const VLANG={france:'fra',germany:'deu',spain:'spa','united kingdom':'eng',italy
 const LNAME={fra:'Français',eng:'Anglais',deu:'Allemand',spa:'Espagnol',ita:'Italien',por:'Portugais',ara:'Arabe',nld:'Néerlandais',tur:'Turc',pol:'Polonais',ron:'Roumain',rus:'Russe',sqi:'Albanais',bul:'Bulgare',hin:'Hindi',fas:'Persan'};
 const lname=l=>{if(l==='_')return 'Autres langues';if(LNAME[l])return LNAME[l];try{const n=new Intl.DisplayNames(['fr'],{type:'language'}).of(l);return n.charAt(0).toUpperCase()+n.slice(1)}catch(e){return l.toUpperCase()}};
 /* Format des chaînes : c[0]=id ("i12" = iptv, "v12" = vavoo), c[1]=nom, c[2]=groupe, c[3]=logo */
+const fj=(u,ms)=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);return fetch(u,{signal:c.signal}).finally(()=>clearTimeout(t))};
 const nk1=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
-async function iptvList(){try{const r=await fetch('/api/iptv?list=1&t='+Date.now());if(!r.ok)throw 0;const j=await r.json();
+async function iptvList(){try{const r=await fj('/api/iptv?list=1&t='+Date.now(),45000);if(!r.ok)throw 0;const j=await r.json();
  const l=(j.channels||[]).map(x=>['i'+x.id,x.name||'',x.group||'',x.logo||'',x.fr===0?1:0,x.lang||'']);
  return l.length?{l,g:(j.groups||[])}:null}catch(e){return null}}
-async function vavooList(){try{const r=await fetch('/vavoo?list=1&t='+Date.now());if(!r.ok)throw 0;const j=await r.json();
+async function vavooList(){try{const r=await fj('/vavoo?list=1&t='+Date.now(),45000);if(!r.ok)throw 0;const j=await r.json();
  const l=(j.channels||[]).map(x=>['v'+x.id,x.name||'',x.group||'',x.logo||'',0,VLANG[String(x.group||'').toLowerCase()]||'']);
  return l.length?{l,g:(j.groups||[])}:null}catch(e){return null}}
-async function logoMap(){try{const r=await fetch('/api/iptv?logos=1');if(!r.ok)throw 0;return await r.json()}catch(e){return {}}}
+async function logoMap(){try{const r=await fj('/api/iptv?logos=1',45000);if(!r.ok)throw 0;return await r.json()}catch(e){return {}}}
 async function liveList(){
  const [a,b,lm]=await Promise.all([iptvList(),vavooList(),logoMap()]);
  if(!a&&!b)return false;
@@ -446,7 +446,7 @@ function chips(){const e=$('#lgr');if(!e)return;const n={};VCH.forEach(c=>{const
  e.innerHTML=it.map(([k,t])=>`<button class="${k===lc?'a':''}" onclick="pickL('${k}')">${escV(t)}</button>`).join('')}
 function pickL(k){lc=k;if(k!=='fav'){try{localStorage.setItem('hlang',k)}catch(e){}}chips();drawV();tabHl()}
 async function live(){stopLive();
- $('#s18').innerHTML=`<div class="stk" id="stk"><div class="hd"><b style="font-size:20px">Chaînes en direct</b><span class="lv">● EN DIRECT</span></div><div class="wide" id="lp" style="margin-top:8px"><div style="aspect-ratio:16/9;background:linear-gradient(135deg,var(--card),#000);display:grid;place-items:center;border-radius:12px;color:var(--mut);font-size:13px">Chargement des chaînes…</div></div><div class="pg" id="pgband"><span class="pgb">EN COURS</span><span class="pgt" id="pgt">Programme indisponible</span><span class="pgh" id="pgh">--:--</span></div></div><div class="chipbar" id="lgr"></div><div class="chipbar" id="lcat" style="padding-top:0"></div><div class="sb" style="margin-top:4px"><svg class="ic" viewBox="0 0 24 24" style="flex:none"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg><input id="vq" placeholder="Rechercher une chaîne…" aria-label="Rechercher une chaîne"></div><div id="vlist"></div>`;
+ $('#s18').innerHTML=`<div class="stk" id="stk"><div class="hd"><b style="font-size:20px">Chaînes en direct</b><span class="lv">● EN DIRECT</span></div><div class="wide" id="lp" style="margin-top:8px"><div style="aspect-ratio:16/9;background:linear-gradient(135deg,var(--card),#000);display:grid;place-items:center;border-radius:12px;color:var(--mut);font-size:13px">Chargement des chaînes… (jusqu'à 30 s au premier lancement)</div></div><div class="pg" id="pgband"><span class="pgb">EN COURS</span><span class="pgt" id="pgt">Programme indisponible</span><span class="pgh" id="pgh">--:--</span></div></div><div class="chipbar" id="lgr"></div><div class="chipbar" id="lcat" style="padding-top:0"></div><div class="sb" style="margin-top:4px"><svg class="ic" viewBox="0 0 24 24" style="flex:none"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg><input id="vq" placeholder="Rechercher une chaîne…" aria-label="Rechercher une chaîne"></div><div id="vlist"></div>`;
  $('#vq').oninput=e=>{VQ=e.target.value;drawV()};
  const ok=await liveList();
  if(!ok){$('#lp').innerHTML='<div style="aspect-ratio:16/9;display:grid;place-items:center;color:var(--mut);font-size:13px">—</div>';$('#vlist').innerHTML='<p class="rt" style="max-width:none">Chaînes indisponibles pour le moment.</p><button class="btn sm" style="width:auto;padding:0 22px;margin:12px auto 0;display:block" onclick="live()">Réessayer</button>';return}
