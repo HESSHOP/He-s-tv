@@ -3,11 +3,13 @@
    N'importe quel appareil « contrôleur » (téléphone ou autre télé) entre le code et envoie des commandes.
    Le propriétaire peut RÉVOQUER son code à tout moment (les contrôleurs sont alors déconnectés).
    Stockage : Redis REST (Upstash). Variables lues : UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN
-   ou KV_REST_API_URL / KV_REST_API_TOKEN (créées par l'intégration Redis/KV de Vercel).
+   ou KV_REST_API_URL / KV_REST_API_TOKEN, ou toute variable finissant par REST_API_URL / REST_API_TOKEN
+   (ex. STORAGE_REST_API_URL créée par l'intégration Vercel avec un préfixe personnalisé).
    Clés : duo:<code> = secret · duo:q:<secret> = file de commandes · duo:j:<secret> = un contrôleur est connecté */
 const crypto = require('crypto');
-const U = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-const K = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const find = (re) => { const k = Object.keys(process.env).find((n) => re.test(n)); return k ? process.env[k] : undefined; };
+const U = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || find(/REST_(API_)?URL$/);
+const K = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || find(/REST_(API_)?TOKEN$/);
 const CMDS = ['up', 'down', 'left', 'right', 'ok', 'back', 'home', 'chp', 'chn', 'prog'];
 const TTL = 30 * 24 * 3600; // le code personnel reste valable 30 jours, renouvelé à chaque utilisation
 
