@@ -237,8 +237,8 @@ let cur='s1',user=rd('hu',{name:'Invité'}),list=rd('hl',[]),likes=rd('hk',[]),h
 function go(id){if(['s11','s13','s14','s15','s16'].includes(id))id='s18';cur=id;if(id!=='s18')stopLive();clearInterval(window.ht);document.querySelectorAll('.scr').forEach(s=>s.classList.toggle('on',s.id===id));
  $('#nav').style.display=['s2','s3','s4','s5'].includes(id)?'flex':'none';
  const main=['s11','s12','s13','s14','s15','s16','s17','s18','s19'].includes(id);$('#tb').style.display=main&&!['s15','s17','s19'].includes(id)?'flex':'none';
- $('#tb').innerHTML=[['s18','Direct','<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M8 3l4 3 4-3"/>'],['s12','Moi','<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>']].map(([i,l,p])=>`<button class="${i===id||(id==='s13'&&i==='s11')?'a':''}" onclick="go('${i}')"><svg viewBox="0 0 24 24" style="fill:none">${p}</svg>${l}</button>`).join('');
- if(id==='s11')home('movie');if(id==='s13')home('tv');if(id==='s12')profile();if(id==='s14')search();if(id==='s16')news();if(id==='s17')settings();if(id==='s18')live();}
+ $('#tb').innerHTML=[['s18','Direct','<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M8 3l4 3 4-3"/>'],['fav','Favoris','<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>'],['s12','Moi','<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>']].map(([i,l,p])=>`<button data-t="${i}" class="${tabA(i,id)}" onclick="${i==='fav'?'goFav()':`go('${i}')`}"><svg viewBox="0 0 24 24" style="fill:none">${p}</svg>${l}</button>`).join('');
+ tabHl();if(id==='s11')home('movie');if(id==='s13')home('tv');if(id==='s12')profile();if(id==='s14')search();if(id==='s16')news();if(id==='s17')settings();if(id==='s18')live();}
 let oi=2;function nextOb(){oi=+cur.slice(1)+1;go(oi>5?'s6':'s'+oi)}
 function eye(b){const i=b.previousElementSibling;i.type=i.type==='password'?'text':'password';b.textContent=i.type==='password'?'Voir':'Masquer'}
 const bad=(id,c)=>{$('#'+id).parentElement.classList.toggle('err',c);return c};
@@ -407,30 +407,44 @@ function settings(){$('#s17').innerHTML=`<div class="hd"><button class="back" st
 <h3>Compte</h3><div class="it">Profil <span>${user.name} ›</span></div><div class="it">Langue <span>Français ›</span></div><div class="it">Qualité vidéo <span>Auto ›</span></div><div class="it" onclick="location.href='/prime'">À propos · Prime Purge <span>›</span></div><div class="it" onclick="logout()" style="color:var(--red)">Se déconnecter</div><p style="padding:14px;text-align:center;max-width:none;font-size:12px">HE'S TV v1.2</p>`}
 /* ===== Chaînes en direct : iptv-org + Vavoo fusionnés, recherche, filtre catégories, lecteur 1200x675 plein écran ===== */
 const escV=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-let lc='Tous',VQ='',VCH=[],VGR=[];
+let lc=(function(){try{return localStorage.getItem('hlang')||'fra'}catch(e){return 'fra'}})(),VQ='',VCH=[],VGR=[];
+/* lc = filtre : 'fav' (favoris), 'all' (toutes les langues) ou un code de langue (fra, eng…) ; '_' = langue inconnue */
+function tabA(i,id){const f=id==='s18'&&lc==='fav';return (i==='fav'?f:(i===id&&!f))?'a':''}
+function tabHl(){document.querySelectorAll('#tb button').forEach(b=>b.classList.toggle('a',tabA(b.dataset.t,cur)==='a'))}
+function goFav(){lc='fav';if(cur==='s18'){chips();drawV();tabHl()}else go('s18')}
+/* Clé « de base » d'une chaîne : sans (1) (7) (BACKUP), HD, FHD, 4K… (même règle que l'API) */
+const bk=n=>nk1(String(n||'').replace(/\((?:\d+|backup)\)/gi,' ').replace(/\b(?:fhd|uhd|hd|sd|4k|h265|hevc|backup|hq)\b/gi,' '));
+const qrk=c=>(c[0][0]==='v'?0:10)+(/backup/i.test(c[1])?20:/\bfhd\b/i.test(c[1])?0:/\bhd\b/i.test(c[1])?1:/\bsd\b/i.test(c[1])?3:/4k|uhd/i.test(c[1])?4:2);
+/* Langue des chaînes Vavoo, d'après leur groupe (pays) */
+const VLANG={france:'fra',germany:'deu',spain:'spa','united kingdom':'eng',italy:'ita',netherlands:'nld',portugal:'por',romania:'ron',poland:'pol',turkey:'tur',russia:'rus',albania:'sqi',bulgaria:'bul',arabia:'ara'};
+const LNAME={fra:'Français',eng:'Anglais',deu:'Allemand',spa:'Espagnol',ita:'Italien',por:'Portugais',ara:'Arabe',nld:'Néerlandais',tur:'Turc',pol:'Polonais',ron:'Roumain',rus:'Russe',sqi:'Albanais',bul:'Bulgare',hin:'Hindi',fas:'Persan'};
+const lname=l=>{if(l==='_')return 'Autres langues';if(LNAME[l])return LNAME[l];try{const n=new Intl.DisplayNames(['fr'],{type:'language'}).of(l);return n.charAt(0).toUpperCase()+n.slice(1)}catch(e){return l.toUpperCase()}};
 /* Format des chaînes : c[0]=id ("i12" = iptv, "v12" = vavoo), c[1]=nom, c[2]=groupe, c[3]=logo */
 const nk1=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
 async function iptvList(){try{const r=await fetch('/api/iptv?list=1&t='+Date.now());if(!r.ok)throw 0;const j=await r.json();
- const l=(j.channels||[]).map(x=>['i'+x.id,x.name||'',x.group||'',x.logo||'',x.fr===0?1:0]);
+ const l=(j.channels||[]).map(x=>['i'+x.id,x.name||'',x.group||'',x.logo||'',x.fr===0?1:0,x.lang||'']);
  return l.length?{l,g:(j.groups||[])}:null}catch(e){return null}}
 async function vavooList(){try{const r=await fetch('/vavoo?list=1&t='+Date.now());if(!r.ok)throw 0;const j=await r.json();
- const l=(j.channels||[]).map(x=>['v'+x.id,x.name||'',x.group||'',x.logo||'']);
+ const l=(j.channels||[]).map(x=>['v'+x.id,x.name||'',x.group||'',x.logo||'',0,VLANG[String(x.group||'').toLowerCase()]||'']);
  return l.length?{l,g:(j.groups||[])}:null}catch(e){return null}}
+async function logoMap(){try{const r=await fetch('/api/iptv?logos=1');if(!r.ok)throw 0;return await r.json()}catch(e){return {}}}
 async function liveList(){
- /* Purge de l'ancien cache (ancien format : id numérique en position 3) */
- const old=rd('vvl',null);if(old&&old.l&&old.l.length&&typeof old.l[0][3]==='number'){try{localStorage.removeItem('vvl')}catch(e){}}
- const [a,b]=await Promise.all([iptvList(),vavooList()]);
+ const [a,b,lm]=await Promise.all([iptvList(),vavooList(),logoMap()]);
  if(!a&&!b)return false;
- const ga=new Set((a&&a.g)||[]),gb=new Set((b&&b.g)||[]);
- VGR=[...new Set([...ga,...gb])].filter(Boolean);
- /* Fusion : Vavoo gagne s'il a la même chaîne (résolution plus fiable), puis iptv-org complète */
- const seen=new Set();VCH=[];
- (b?b.l:[]).forEach(c=>{const k=nk1(c[1]);if(!k||seen.has(k))return;seen.add(k);VCH.push(c)});
- (a?a.l:[]).forEach(c=>{const k=nk1(c[1]);if(!k||seen.has(k))return;seen.add(k);VCH.push(c)});
- sv('vvl',{t:Date.now(),l:VCH,g:VGR});
+ /* Une chaîne sans logo n'est jamais affichée. Les chaînes qui n'en ont pas reçoivent celui de la base iptv-org (même nom).
+    Les variantes d'une même chaîne ((1) (7) HD FHD BACKUP…) sont regroupées : on garde la meilleure. */
+ const best=new Map();
+ [...(b?b.l:[]),...(a?a.l:[])].forEach(c=>{const k=bk(c[1]);if(!k)return;if(!c[3])c[3]=lm[k]||'';if(!c[3])return;
+  const q=qrk(c),p=best.get(k);if(!p||q<p.q)best.set(k,{c,q})});
+ VCH=[...best.values()].map(x=>x.c);VGR=[];
  return VCH.length>0}
-function chips(){const e=$('#lgr');if(e)e.innerHTML=['Tous',...VGR].map((g,i)=>`<button class="${g===lc?'a':''}" onclick="pickG(${i-1})">${escV(g)}</button>`).join('')}
-function pickG(i){lc=i<0?'Tous':VGR[i];chips();drawV()}
+function chips(){const e=$('#lgr');if(!e)return;const n={};VCH.forEach(c=>{const k=c[5]||'_';n[k]=(n[k]||0)+1});
+ const ks=Object.keys(n).sort((x,y)=>x==='fra'?-1:y==='fra'?1:x==='_'?1:y==='_'?-1:n[y]-n[x]);
+ if(lc!=='fav'&&lc!=='all'&&!n[lc])lc=n.fra?'fra':'all';
+ const nf=FAV.filter(id=>VCH.some(c=>c[0]===id)).length;
+ const it=[['fav','★ Favoris ('+nf+')'],['all','Toutes les langues ('+VCH.length+')'],...ks.map(k=>[k,lname(k)+' ('+n[k]+')'])];
+ e.innerHTML=it.map(([k,t])=>`<button class="${k===lc?'a':''}" onclick="pickL('${k}')">${escV(t)}</button>`).join('')}
+function pickL(k){lc=k;if(k!=='fav'){try{localStorage.setItem('hlang',k)}catch(e){}}chips();drawV();tabHl()}
 async function live(){stopLive();
  $('#s18').innerHTML=`<div class="stk" id="stk"><div class="hd"><b style="font-size:20px">Chaînes en direct</b><span class="lv">● EN DIRECT</span></div><div class="wide" id="lp" style="margin-top:8px"><div style="aspect-ratio:16/9;background:linear-gradient(135deg,var(--card),#000);display:grid;place-items:center;border-radius:12px;color:var(--mut);font-size:13px">Chargement des chaînes…</div></div><div class="pg" id="pgband"><span class="pgb">EN COURS</span><span class="pgt" id="pgt">Programme indisponible</span><span class="pgh" id="pgh">--:--</span></div></div><div class="chipbar" id="lgr"></div><div class="chipbar" id="lcat" style="padding-top:0"></div><div class="sb" style="margin-top:4px"><svg class="ic" viewBox="0 0 24 24" style="flex:none"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg><input id="vq" placeholder="Rechercher une chaîne…" aria-label="Rechercher une chaîne"></div><div id="vlist"></div>`;
  $('#vq').oninput=e=>{VQ=e.target.value;drawV()};
@@ -457,9 +471,9 @@ function catChips(){const e=$('#lcat');if(e)e.innerHTML=['Toutes',...CATL].map((
 function pickC(i){cc=i<0?'Toutes':CATL[i];catChips();drawV()}
 function rowV(c){const ini=escV(c[1]).slice(0,2).toUpperCase();
  const vis=c[3]?`<img class="lgo" src="${escV(c[3])}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="lgE(this,'${ini}')">`:`<div class="cl">${ini}</div>`;
- return `<div class="li" onclick="watchUrl('${c[0]}')"><div class="lw">${vis}<i class="lg">${escV(c[2])}</i></div><div style="flex:1;min-width:0"><b>${escV(c[1])}</b><small>${escV(catOf(c))}</small></div><button type="button" class="stb ${FAV.includes(c[0])?'on':''}" aria-label="Favori" onclick="event.stopPropagation();favT('${c[0]}',this)">${STAR}</button></div>`}
+ return `<div class="li" data-id="${c[0]}" onclick="watchUrl('${c[0]}')"><div class="lw">${vis}<i class="lg">${escV(c[2])}</i></div><div style="flex:1;min-width:0"><b>${escV(c[1])}</b><small>${escV(catOf(c))}</small></div><button type="button" class="stb ${FAV.includes(c[0])?'on':''}" aria-label="Favori" onclick="event.stopPropagation();favT('${c[0]}',this)">${STAR}</button></div>`}
 function drawV(){const q=nm(VQ);
- const l=VCH.filter(c=>(lc==='Tous'||c[2]===lc)&&(!q||nm(c[1]).includes(q))&&(cc==='Toutes'||catOf(c)===cc));
+ const l=VCH.filter(c=>(lc==='fav'?FAV.includes(c[0]):lc==='all'||(c[5]||'_')===lc)&&(!q||nm(c[1]).includes(q))&&(cc==='Toutes'||catOf(c)===cc));
  const srt=(x,y)=>((x[4]||0)-(y[4]||0))||String(x[1]).localeCompare(String(y[1]),'fr',{sensitivity:'base'});
  let html='',flat=[];
  if(cc==='Toutes'){const g={};l.forEach(c=>{const k=catOf(c);(g[k]=g[k]||[]).push(c)});
@@ -470,7 +484,9 @@ function drawV(){const q=nm(VQ);
  $('#vlist').innerHTML=flat.length?html:'<p class="rt" style="max-width:none">Aucune chaîne trouvée.</p>'}
 const STAR='<svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>';
 let FAV=rd('hfav',[]);
-function favT(id,b){const k=FAV.indexOf(id);if(k>=0)FAV.splice(k,1);else FAV.push(id);sv('hfav',FAV);b.classList.toggle('on',k<0)}
+function favT(id,b){const k=FAV.indexOf(id);if(k>=0)FAV.splice(k,1);else FAV.push(id);sv('hfav',FAV);b.classList.toggle('on',k<0);
+ if(lc==='fav'&&k>=0){const li=b.closest('.li');if(li)li.remove();window.VL=(window.VL||[]).filter(x=>x!==id)}
+ chips();toast(k<0?'Ajoutée aux favoris ★':'Retirée des favoris')}
 /* --- Lecteur direct : plein écran paysage 1200x675, chaînes en bas, ⏮ ⏭, format d'écran, sans pause ni vitesse --- */
 let HLS=null,ccT=0,flT=0,fmi=0;
 const FMT=[['contain','Ajusté'],['cover','Remplir'],['fill','Étiré']];
@@ -484,7 +500,12 @@ function chStep(d){const L=window.VL||[];if(!L.length)return;let k=L.indexOf(win
 function fmtCh(){fmi=(fmi+1)%FMT.length;const v=document.getElementById('vv');if(v)v.style.objectFit=FMT[fmi][0];flash('Format : '+FMT[fmi][1]);showCc()}
 function tryPlay(v){v.play().catch(()=>{v.muted=true;v.play().catch(()=>{});flash('Touchez l\'écran pour activer le son')})}
 function mkVideo(){const v=document.createElement('video');v.id='vv';v.addEventListener('playing',()=>{const e=$('#lerr');if(e)e.style.display='none'});v.autoplay=true;v.playsInline=true;v.controls=false;v.disablePictureInPicture=true;v.setAttribute('controlslist','nodownload nofullscreen noplaybackrate');v.style.objectFit=FMT[fmi][0];v.addEventListener('contextmenu',e=>e.preventDefault());return v}
-function lgE(i,t){if(/^http:/.test(i.src)&&!i.dataset.r){i.dataset.r=1;i.src=i.src.replace(/^http:/,'https:');return}i.outerHTML='<div class="cl">'+t+'</div>'}
+function lgE(i,t){if(/^http:/.test(i.src)&&!i.dataset.r){i.dataset.r=1;i.src=i.src.replace(/^http:/,'https:');return}
+ const li=i.closest('.li'),cs=i.closest('.cs'),id=(li&&li.dataset.id)||(cs&&cs.dataset.id);
+ /* Logo introuvable : la chaîne est retirée de la liste (sauf si l'appareil est simplement hors ligne) */
+ if(!id||navigator.onLine===false){i.outerHTML='<div class="cl">'+t+'</div>';return}
+ const k=VCH.findIndex(c=>c[0]===id);if(k>=0)VCH.splice(k,1);window.VL=(window.VL||[]).filter(x=>x!==id);
+ document.querySelectorAll('[data-id="'+id+'"]').forEach(e=>e.remove())}
 function stripFill(){const s=document.getElementById('cstrip');if(!s)return;
  s.innerHTML=(window.VL||[]).map(id=>{const c=VCH.find(x=>x[0]===id);if(!c)return '';const ini=escV(c[1]).slice(0,2).toUpperCase();
   const v=c[3]?`<img src="${escV(c[3])}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="lgE(this,'${ini}')">`:`<div class="cl">${ini}</div>`;
