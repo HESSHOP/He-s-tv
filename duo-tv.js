@@ -16,7 +16,11 @@ window.IS_TV=IS;
 /* Mise en page « grand écran » (plein écran, colonnes, barre à gauche) : sur une télé, OU sur tout écran large en paysage (ordinateur, tablette, navigateur en mode ordinateur) */
 const WIDE=()=>innerWidth>=1000&&innerWidth>innerHeight*1.2;
 const tvk=()=>document.documentElement.style.setProperty('--tk',Math.max(.5,innerHeight/540));
-function lay(){const on=IS||WIDE();document.body.classList.toggle('tv',on);document.body.classList.toggle('tvmode',on);if(on)tvk()}
+function lay(){const on=IS||WIDE();document.body.classList.toggle('tv',on);document.body.classList.toggle('tvmode',on);if(on)tvk();tvCols()}
+/* Liste des chaînes : colonne à droite du lecteur dès que la mise en page « grand écran » est active (télé détectée OU écran large) */
+function tvCols(){const s=$('#s18');if(!s)return;const on=document.body.classList.contains('tv'),c=$('#rcol');
+ if(on&&!c&&$('#stk')){const d=document.createElement('div');d.id='rcol';Q(':scope>*',s).filter(x=>x.id!=='stk').forEach(x=>d.appendChild(x));s.appendChild(d)}
+ else if(!on&&c){while(c.firstChild)s.insertBefore(c.firstChild,c);c.remove()}}
 lay();addEventListener('resize',lay);
 
 /* ===== 2. Styles (mode TV + Duo) ===== */
@@ -34,7 +38,8 @@ body.tv .rowx .pc,body.tv .rowx .sk{height:200px}
 body.tv .grid{grid-template-columns:repeat(6,1fr)}
 body.tv #nl{display:grid;grid-template-columns:repeat(3,1fr);column-gap:14px}body.tv #nl .wide{margin:0 0 16px}
 body.tv #s18{flex-direction:row;align-items:flex-start;justify-content:flex-start;gap:16px}
-body.tv #s18>#stk{width:57%;position:sticky;top:0}body.tv #rcol{flex:1;min-width:0}
+body.tv #s18>#stk{width:57%;position:sticky;top:0}body.tv #rcol{flex:1;min-width:0;overflow:hidden}
+body.tv .scr.main{overflow-x:hidden}body.tv #s18>*{min-width:0}
 body.tv .pw.fs .pi>:not(.stg):not(.wmk){zoom:var(--tk,1)}
 .tvf{outline:3px solid #fff!important;outline-offset:3px;box-shadow:0 0 0 7px color-mix(in srgb,var(--red) 75%,transparent),0 12px 30px #000!important;scale:1.05;position:relative;z-index:4;border-radius:10px}
 .tb .tvf,.cn.tvf,.rb.tvf,.stb.tvf{border-radius:14px}
@@ -64,16 +69,16 @@ body.tv .pw.fs .pi>:not(.stg):not(.wmk){zoom:var(--tk,1)}
 #duo.rem h2,#duo.rem .dtabs{display:none}
 #duo.rem #duob,#duo.rem #dbody{width:100%;height:100%}
 #duo.rem .x{top:max(12px,env(safe-area-inset-top));background:#1c1c1e;color:#fff}
-.drm{box-sizing:border-box;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:14px;padding:max(12px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));background:linear-gradient(180deg,#000 55%,#05324a 100%);color:#fff;overflow:hidden}
+.drm{box-sizing:border-box;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:10px;padding:max(12px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));background:linear-gradient(180deg,#000 55%,#05324a 100%);color:#fff;overflow:hidden}
 .drm button{font-family:inherit;-webkit-tap-highlight-color:transparent}
 .drm button:active{transform:scale(.94)}
 .drh{width:100%;display:flex;align-items:center;justify-content:space-between;font-size:18px;font-weight:600;min-height:40px}
 .drh i{width:34px}
 .drof{width:34px;height:34px;border:0;background:none;color:#ff3b30;font-size:24px;cursor:pointer;padding:0}
 .drt{display:flex;gap:10px;width:100%;max-width:360px}
-.drt button{flex:1;height:58px;border:0;border-radius:18px;background:#1c1c1e;color:#fff;font-size:20px;line-height:1;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.drt button{flex:1;height:52px;border:0;border-radius:18px;background:#1c1c1e;color:#fff;font-size:20px;line-height:1;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
 .drt small{font-size:11px;color:#bbb}
-.drp{position:relative;width:min(72vw,40vh);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 50% 35%,#4fdcff,#00b4f0 60%,#0094d0);box-shadow:0 10px 40px #00b4f055;flex:none}
+.drp{position:relative;width:min(70vw,36vh);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 50% 35%,#4fdcff,#00b4f0 60%,#0094d0);box-shadow:0 10px 40px #00b4f055;flex:none}
 .drp .a{position:absolute;width:30%;height:30%;border:0;background:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .drp .a svg{width:36px;height:36px;stroke:#063447;stroke-width:2.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .drp .u{top:2%;left:35%}.drp .d{bottom:2%;left:35%}.drp .l{left:2%;top:35%}.drp .r{right:2%;top:35%}
@@ -136,8 +141,7 @@ document.addEventListener('keydown',e=>{
 /* ===== 4. Branchements sur le script principal ===== */
 const _go=window.go;window.go=function(){reset();return _go.apply(this,arguments)};
 /* Chaînes en direct : en mode TV, la liste passe dans une colonne à droite du lecteur */
-const _live=window.live;window.live=function(){const r=_live.apply(this,arguments);
- if(IS){const s=$('#s18');if(s&&!$('#rcol')){const c=document.createElement('div');c.id='rcol';Q(':scope>*',s).filter(x=>x.id!=='stk').forEach(x=>c.appendChild(x));s.appendChild(c)}}return r};
+const _live=window.live;window.live=function(){const r=_live.apply(this,arguments);tvCols();return r};
 /* Sur télé : une chaîne choisie s'ouvre directement en plein écran */
 const _w=window.watchUrl;window.watchUrl=function(){const r=_w.apply(this,arguments);
  if(IS){const p=P();if(p&&!fsEl()&&!p.classList.contains('fsx'))fsT()}return r};
@@ -226,7 +230,33 @@ function run(c){const p=P();
  if(c==='up')kev('ArrowUp',38);else if(c==='down')kev('ArrowDown',40);else if(c==='left')kev('ArrowLeft',37);else if(c==='right')kev('ArrowRight',39);
  else if(c==='ok')kev('Enter',13);else if(c==='back')kev('Escape',27);else if(c==='prog')kev('p',80);
  else if(c==='chp'||c==='chn'){if(cur==='s18'&&p)chStep(c==='chp'?-1:1)}
- else if(c==='home'){if(open('duo'))duoClose();if(isBig(p))fsT();go('s18')}}
+ else if(c==='home'){if(open('duo'))duoClose();if(isBig(p))fsT();go('s18')}
+ else if(c==='fav'){if(open('duo'))duoClose();if(isBig(p))fsT();goFav()}
+ else if(c==='rnd')rndFr();
+ else if(c.slice(0,3)==='ch:')openCh(c.slice(3))}
+/* Chaînes en direct commandées à distance : on attend que la liste soit chargée, on filtre, on lance, puis plein écran (paysage) */
+let cbusy=0;
+async function liveReady(){if(open('duo'))duoClose();if(open('ppnl'))closePP();if(cur!=='s18')go('s18');
+ for(let i=0;i<100;i++){const v=$('#vlist');if(v&&v.children.length)break;await new Promise(r=>setTimeout(r,500))}
+ return VCH.length>0}
+function showLang(l){lc=l;cc='Toutes';VQ='';const q=$('#vq');if(q)q.value='';chips();catChips();drawV()}
+function fsAuto(){if(IS)return;const p=P();if(p&&!fsEl()&&!p.classList.contains('fsx'))fsT()}
+async function rndFr(){if(cbusy)return;cbusy=1;
+ try{if(!await liveReady())return;
+  if(lc!=='fra'||cc!=='Toutes'||VQ)showLang('fra');
+  let ids=(window.VL||[]).filter(id=>{const c=VCH.find(x=>x[0]===id);return c&&c[5]==='fra'});
+  if(!ids.length)ids=VCH.filter(c=>c[5]==='fra').map(c=>c[0]);
+  if(!ids.length){toast('Aucune chaîne française trouvée');return}
+  let id=ids[Math.floor(Math.random()*ids.length)];
+  if(ids.length>1)for(let k=0;k<5&&id===window.LCUR;k++)id=ids[Math.floor(Math.random()*ids.length)];
+  watchUrl(id);fsAuto()}
+ finally{cbusy=0}}
+async function openCh(id){if(cbusy)return;cbusy=1;
+ try{if(!await liveReady())return;
+  const c=VCH.find(x=>x[0]===id);if(!c){toast('Chaîne introuvable sur cet appareil');return}
+  if(!(window.VL||[]).includes(id))showLang(c[5]||'_');
+  watchUrl(id);fsAuto()}
+ finally{cbusy=0}}
 function upd(){const e=$('#dst');if(e){e.className='dst'+(joined?' ok':'');e.textContent=joined?'✓ Un appareil est connecté':'En attente d\'un appareil…'}}
 /* Sondage adaptatif (économise les requêtes Redis) : lent au repos, rapide quand on pilote ou que l'écran Duo est ouvert */
 function sched(){clearTimeout(pt);pt=setTimeout(tick,open('duo')?1500:!joined?5000:(Date.now()-lastCmd<20000?900:2500))}
@@ -263,6 +293,7 @@ function remote(b,c){const d=$('#duo');if(d)d.classList.add('rem');
   b.innerHTML=`<div class="drm">
    <div class="drh"><button type="button" class="drof" data-c="_off" aria-label="Déconnecter">⏻</button><span>Télécommande</span><i></i></div>
    <div class="drt"><button type="button" data-c="back">↩<small>Retour</small></button><button type="button" data-c="home">⌂<small>Accueil</small></button><button type="button" data-c="prog">☰<small>Programme</small></button></div>
+   <div class="drt"><button type="button" data-c="fav">★<small>Favoris</small></button><button type="button" data-c="rnd">🎲<small>Chaîne FR au hasard</small></button></div>
    ${mode==='nav'?`<div class="drp"><button type="button" class="a u" data-c="up" aria-label="Haut">${CHV}</button><button type="button" class="a d" data-c="down" aria-label="Bas">${CHV}</button><button type="button" class="a l" data-c="left" aria-label="Gauche">${CHV}</button><button type="button" class="a r" data-c="right" aria-label="Droite">${CHV}</button><button type="button" class="ok" data-c="ok">OK</button></div>
    <div class="drch"><button type="button" data-c="chp" aria-label="Chaîne précédente">−</button><span>Chaîne</span><button type="button" data-c="chn" aria-label="Chaîne suivante">+</button></div>`
    :`<div class="drpad" id="dpad"><p>Glissez pour naviguer<br>Touchez pour valider</p></div>`}
@@ -299,6 +330,19 @@ window.duoOpen=function(tab){let d=$('#duo');
  if(!d){d=document.createElement('div');d.id='duo';d.setAttribute('role','dialog');d.setAttribute('aria-label','Duo');d.innerHTML='<button class="x" type="button" onclick="duoClose()" aria-label="Fermer">✕</button><div id="duob"></div>';$('#app').appendChild(d)}
  d.classList.add('on');duoUI(tab||ls.g('hduotab')||(IS?'host':'ctl'));if(host)sched()};
 window.duoClose=function(){scanClose();const d=$('#duo');if(d)d.classList.remove('on');reset();if(host)sched()};
+
+/* -- téléphone : bouton « envoyer sur la télé » dans le lecteur de chaînes -- */
+window.castTv=async function(){const id=window.LCUR;if(!id)return;const c=ls.g('hduor'),p=P(),full=fsEl()||(p&&p.classList.contains('fsx'));
+ if(!c){flash('Connectez d\'abord la télé : Duo › Scanner / saisir');if(!full)duoOpen('ctl');return}
+ const j=await post({a:'send',code:c,cmd:'ch:'+id});
+ if(j.ok)flash('Chaîne envoyée sur la télé ✓');
+ else if(j.s===404){ls.s('hduor',null);flash('Code de la télé expiré : reconnectez-vous');if(!full)duoOpen('ctl')}
+ else flash(errT(j))};
+const TVI='<svg class="ic2" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M9 3l3 3 3-3M10.5 9.5v5l4-2.5z"/></svg>';
+const _lu=window.liveUI;
+if(_lu)window.liveUI=function(p){_lu.apply(this,arguments);if(IS)return;
+ const w=p.querySelector('.fmw'),sp=w&&w.querySelector('.sp');
+ if(w&&sp&&!w.querySelector('.cast')){const b=document.createElement('button');b.type='button';b.className='rb cast';b.setAttribute('aria-label','Envoyer sur la télé');b.innerHTML=TVI;b.onclick=()=>window.castTv();sp.insertAdjacentElement('afterend',b)}};
 
 /* Entrée « Duo » dans les Paramètres */
 const _set=window.settings;window.settings=function(){_set.apply(this,arguments);
