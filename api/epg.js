@@ -36,7 +36,7 @@ async function fetchXml(url, timeout) {
   try {
     const r = await fetch(url, { signal: ac.signal, headers: { 'User-Agent': 'HESTV-EPG/1.0' } });
     if (!r.ok) return null;
-    const buf = Buffer.from(await r.arrayBuffer());
+    let buf = Buffer.from(await r.arrayBuffer()); // CORRECTION : let (et non const), sinon la décompression échoue
     if (!buf.length) return null;
     if (url.endsWith('.gz')) { try { buf = zlib.gunzipSync(buf); } catch (e) { return null; } }
     const xml = buf.toString('utf8');
