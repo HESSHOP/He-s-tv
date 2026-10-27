@@ -2,7 +2,8 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "functions": {
-    "api/iptv.js": {"maxDuration": 60}
+    "api/iptv.js": {"maxDuration": 60},
+    "api/famille.js": {"includeFiles": "api/_playlists/**"}
   },
   "rewrites": [
     {"source": "/syrix/:path*", "destination": "/api/syrix?p=:path*"},
