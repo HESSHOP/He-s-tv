@@ -97,7 +97,8 @@ function diverse(list,cap){const g=new Map();list.forEach(c=>{const k=c.lang||'_
 async function buildList(){
   const a=await loadAll(),check=process.env.IPTV_CHECK==='1',budget=+(process.env.IPTV_BUDGET_MS||8000),start=Date.now();
   const maxFr=+(process.env.IPTV_MAX||900),maxOther=+(process.env.IPTV_MAX_OTHER===undefined?1200:process.env.IPTV_MAX_OTHER);
-  const byName=(x,y)=>x.group.localeCompare(y.group,'fr')||x.name.localeCompare(y.name,'fr');let frL,othL;
+  const PRIORITY_NAMES=['tf1','france 2','france 3','france 4','france 5','m6','gulli','arte','c8','w9','tmc','tfx','cstar','bfm tv','france 24'];
+  const byName=(x,y)=>{const rank=n=>{const i=PRIORITY_NAMES.indexOf(String(n||'').toLowerCase().replace(/\s+/g,' ').trim());return i<0?999:i;};const a=rank(x.name),b=rank(y.name);return (a-b)||x.group.localeCompare(y.group,'fr')||x.name.localeCompare(y.name,'fr');};let frL,othL;
   if(check){const pick=(r,cap)=>[...r.alive.sort(byName),...r.rest.slice(0,Math.max(0,cap-r.alive.length)).sort(byName)];const fr=await aliveFilter(a.fr,maxFr,start+budget*.6);const oth=maxOther>0?await aliveFilter(diverse(a.other,maxOther*2),maxOther,start+budget):{alive:[],rest:[]};frL=pick(fr,maxFr);othL=pick(oth,maxOther);}else{frL=a.fr.slice(0,maxFr).sort(byName);othL=maxOther>0?diverse(a.other,maxOther).sort(byName):[];}
   const list=[...frL,...othL],d={groups:[...new Set(list.map(c=>c.group))].sort((x,y)=>x.localeCompare(y,'fr')),channels:list.map(c=>({id:c.id,name:c.name,group:c.group,logo:c.logo,fr:c.fr,lang:c.lang}))};
   listCache={t:list.length>50?Date.now():Date.now()-TTL+3e5,d};return d;
