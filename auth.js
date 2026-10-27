@@ -1,11 +1,17 @@
 // auth.js — vraie connexion avec Firebase Authentication : e-mail + mot de passe, Google, Facebook
 // Chargé par index.html : <script type="module" src="/auth.js"></script> (juste avant </body>)
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-import {
+// « Ma playlist » est chargée en premier et indépendamment de Firebase
+import('/perso.js').catch(() => {});
+
+(async () => {
+const [{ initializeApp }, {
   getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword,
   sendEmailVerification, sendPasswordResetEmail, updateProfile, signOut,
   signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, FacebookAuthProvider
-} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+}] = await Promise.all([
+  import('https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js'),
+  import('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js')
+]);
 
 const firebaseConfig = {
   apiKey: "AIzaSyCa6zzM9wOSV26mhaUy1t3yLQJcnBL0nJk",
@@ -17,6 +23,10 @@ const firebaseConfig = {
 };
 const auth = getAuth(initializeApp(firebaseConfig));
 auth.languageCode = 'fr';
+
+// Utilisés par perso.js pour demander la liste « Famille » au serveur
+window.getIdToken = async () => (auth.currentUser ? auth.currentUser.getIdToken() : null);
+window.authReady = new Promise(res => { let off = null; off = onAuthStateChanged(auth, () => { res(); if (off) off(); }); });
 
 const q = s => document.querySelector(s);
 
@@ -116,3 +126,4 @@ window.logout = () => {
   user = { name: 'Invité' }; sv('hu', null);
   toast('Déconnecté'); go('s7');
 };
+})().catch(e => console.error('auth.js', e));
