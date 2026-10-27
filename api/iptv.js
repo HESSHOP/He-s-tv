@@ -10,6 +10,7 @@
 //   IPTV_CHECK      1 = vérifier que les flux répondent avant de les lister (plus lent ; défaut : non, la liste doit rester rapide)
 //   IPTV_BUDGET_MS  si IPTV_CHECK=1 : temps max de vérification (défaut 8000). Les flux non vérifiés à temps sont quand même listés
 //                   (iptv-org teste déjà ses flux chaque jour) : la liste n'est jamais vide.
+//   IPTV_CORS       0 = ne pas exiger l'en-tête CORS lors de la vérification (défaut : exigé, un flux sans CORS ne peut pas être lu dans un navigateur)
 
 const BASE = 'https://iptv-org.github.io/iptv/';
 const FR_SOURCES = [
@@ -22,6 +23,15 @@ const FR_SOURCES = [
 ].map(p => BASE + p + '.m3u');
 const OTHER_SOURCES = [BASE + 'index.m3u']; // toutes les chaînes (autres langues)
 const DB = 'https://iptv-org.github.io/api/';
+const ORIGIN = 'https://he-s-tv.vercel.app';
+
+// Chaînes ajoutées à la main (toujours francophones, listées en priorité).
+// Format : { name: 'Nom', url: 'https://.../flux.m3u8', logo: 'https://.../logo.png', group: 'Généralistes' }
+//   - url   : lien HTTPS direct d'un flux HLS (.m3u8) que VOUS avez le droit d'utiliser ; il doit autoriser la lecture depuis un navigateur (CORS).
+//   - logo  : obligatoire (sinon la chaîne n'est pas listée), ou bien tvgId: '<id de la chaîne dans la base iptv-org>' pour reprendre son logo.
+//   - group : facultatif.
+const EXTRA = [
+];
 
 const FAKE_PAT = /\b(test|fake|adult|xxx|erp|promo|advertising|placeholder|offline|demo)\b|18\+/i;
 
@@ -168,6 +178,25 @@ async function buildAll() {
   ]);
 
   const seen = new Set(), fr = [], other = [], byId = new Map(), names = {};
+
+  // Chaînes ajoutées à la main : en tête, elles remplacent une chaîne de même nom venant des playlists
+  EXTRA.forEach(x => {
+    if (!x || !x.name || !/^https:\/\//i.test(x.url || '')) return;
+    const base = (x.tvgId || '').split('@')[0];
+    const logo = (x.logo && /^https?:\/\//i.test(x.logo) && x.logo) || d.logos.get(base) || '';
+    if (!logo) { console.warn('IPTV EXTRA ignorée (logo manquant) : ' + x.name); return; }
+    const name = cleanName(x.name), key = baseKey(name);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    const c = { name, url: x.url, logo: logo.replace(/^http:\/\//i, 'https://'), group: x.group || 'Généralistes', fr: 1, lang: 'fra' };
+    if (!names[key]) names[key] = c.logo;
+    let id = hashId(c.url);
+    while (byId.has(id) && byId.get(id) !== c.url) id += 'x';
+    c.id = id;
+    byId.set(id, c.url);
+    fr.push(c);
+  });
+
   plays.flat().forEach(c => {
     c.name = cleanName(c.name);
     if (!c.name || FAKE_PAT.test(c.name) || /\bradio\b/i.test(c.name)) return;
@@ -186,8 +215,8 @@ async function buildAll() {
       ? (d.known.has(base) ? d.fra.has(base) : FRA_TLDS.has(tld) && !MIXED.has(tld))
       : FRA_TLDS.has(tld) || FR_NAME_PAT.test(c.name);
     if (seen.has(key)) return;
-    // Autres langues : un navigateur ne peut pas envoyer de « Referer » imposé, ces flux échoueraient
-    if (!isFr && c.ref) return;
+    // Un navigateur ne peut pas envoyer de « Referer » imposé : ces flux échouent, quelle que soit leur langue
+    if (c.ref) return;
     seen.add(key);
     c.group = mapGroup(c.group);
     c.fr = isFr ? 1 : 0;
@@ -202,13 +231,19 @@ async function buildAll() {
   return all;
 }
 
+// Un flux est « vivant » s'il répond ET (par défaut) s'il autorise la lecture depuis un navigateur (en-tête CORS).
+// Un flux sans CORS ne peut jamais être lu par hls.js : c'est une cause fréquente de chaînes qui « bugguent ».
+const NEED_CORS = process.env.IPTV_CORS !== '0';
 async function checkAlive(url) {
   try {
-    const r = await fetch(url, { method: 'HEAD', redirect: 'follow', signal: AbortSignal.timeout(5000) });
-    if (r.ok || r.status === 206 || r.status === 416 || r.status === 403 || r.status === 453) return true;
+    const r = await fetch(url, { headers: { Range: 'bytes=0-1023', Origin: ORIGIN }, redirect: 'follow', signal: AbortSignal.timeout(5000) });
+    try { if (r.body) await r.body.cancel(); } catch (e) {}
     if (r.status === 404 || r.status === 410) return false;
-    const r2 = await fetch(url, { headers: { Range: 'bytes=0-255' }, redirect: 'follow', signal: AbortSignal.timeout(5000) });
-    return r2.status < 500;
+    if (r.status === 403 || r.status === 453 || r.status === 416) return true; // restriction géographique possible : on garde
+    if (!(r.ok || r.status === 206)) return false;
+    if (!NEED_CORS) return true;
+    const a = r.headers.get('access-control-allow-origin');
+    return a === '*' || a === ORIGIN;
   } catch (e) { return false; }
 }
 
