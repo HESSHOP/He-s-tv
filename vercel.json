@@ -20,10 +20,10 @@
       {"key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://www.googletagmanager.com; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; img-src 'self' data: https://*.google-analytics.com https://*.googletagmanager.com; style-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"}
     ]},
     {"source": "/", "headers": [
-      {"key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://accounts.google.com; connect-src 'self' https://api.themoviedb.org https://accounts.google.com https:; img-src 'self' data: https:; media-src 'self' https: blob:; frame-src https:; base-uri 'self'; frame-ancestors 'none'"}
+      {"key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://cdn.jsdelivr.net https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; connect-src 'self' https://api.themoviedb.org https://accounts.google.com https:; img-src 'self' data: https:; media-src 'self' https: blob:; frame-src https:; base-uri 'self'; frame-ancestors 'none'"}
     ]},
     {"source": "/index.html", "headers": [
-      {"key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://accounts.google.com; connect-src 'self' https://api.themoviedb.org https://accounts.google.com https:; img-src 'self' data: https:; media-src 'self' https: blob:; frame-src https:; base-uri 'self'; frame-ancestors 'none'"}
+      {"key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://cdn.jsdelivr.net https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; connect-src 'self' https://api.themoviedb.org https://accounts.google.com https:; img-src 'self' data: https:; media-src 'self' https: blob:; frame-src https:; base-uri 'self'; frame-ancestors 'none'"}
     ]},
     {"source": "/assets/(.*)", "headers": [
       {"key": "Cache-Control", "value": "public, max-age=31536000, immutable"}
