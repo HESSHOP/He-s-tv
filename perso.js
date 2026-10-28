@@ -40,23 +40,39 @@ function parse(text) {
   return { out, sk };
 }
 
-/* --- les chaînes de « Ma playlist » rejoignent la liste du Direct --- */
+/* --- « Ma playlist » (appareil) + « Famille » (dossier du dépôt, réservé aux comptes autorisés) rejoignent le Direct --- */
+const _f = window.fetch;
+LNAME.famille = 'Famille';
+let FAM = null, famT = 0;
+const FKEY = 'hfc';
+const getCode = () => { try { return localStorage.getItem(FKEY) || ''; } catch (e) { return ''; } };
+async function famille() {
+  try {
+    const code = getCode();
+    if (!code) { FAM = null; return []; }
+    if (FAM && Date.now() - famT < 6e5) return FAM;
+    const r = await _f('/api/famille', { headers: { 'x-famille-code': encodeURIComponent(code) } });
+    FAM = r.ok ? ((await r.json()).channels || []) : [];     // 403 : code incorrect
+    famT = Date.now();
+    return FAM;
+  } catch (e) { return []; }
+}
 const _ll = window.liveList;
 window.liveList = async function () {
   const ok = await _ll.apply(this, arguments);
-  const P = ld();
-  if (!P.length) return ok;
+  const P = ld(), F = await famille();
+  if (!P.length && !F.length) return ok;
   PMAP.clear();
-  const add = P.map(x => {
-    const k = '_' + hh(x.u);
-    PMAP.set(k, x.u);
-    return ['p' + k, x.n, x.g || 'Ma playlist', x.l || '', 0, 'perso'];
-  });
+  const mk = (x, lang) => {
+    const u = x.u || x.url, k = '_' + hh(u);
+    PMAP.set(k, u);
+    return ['p' + k, x.n || x.name, x.g || x.group || (lang === 'famille' ? 'Famille' : 'Ma playlist'), x.l || x.logo || '', 0, lang];
+  };
+  const add = [...F.map(x => mk(x, 'famille')), ...P.map(x => mk(x, 'perso'))];
   VCH = ok ? VCH.concat(add) : add;
   return true;
 };
 /* lecture : les ids « p… » sont résolus ici, sans passer par le serveur */
-const _f = window.fetch;
 window.fetch = function (u) {
   try {
     if (typeof u === 'string' && u.indexOf('/api/iptv?id=') === 0) {
@@ -82,6 +98,8 @@ css.textContent = `
 #plp .x{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;border:0;background:var(--card);color:var(--txt);font-size:16px;cursor:pointer}
 #plp textarea{width:100%;min-height:130px;resize:vertical;background:var(--card);border:1px solid var(--line);border-radius:10px;color:var(--txt);font:inherit;font-size:13px;padding:10px;outline:0}
 #plp textarea:focus{border-color:var(--red)}
+#plp input[type=password]{width:100%;background:var(--card);border:1px solid var(--line);border-radius:10px;color:var(--txt);font:inherit;font-size:15px;padding:12px;outline:0}#plp input[type=password]:focus{border-color:var(--red)}
+#plp hr{border:0;border-top:1px solid var(--line);margin:18px 0}
 #plp input[type=file]{width:100%;margin:10px 0 0;color:var(--mut);font-size:13px}
 #plp .dst{font-size:13px;color:var(--mut);margin:10px 0 0}#plp .dst.ok{color:#1db954}#plp .dst.er{color:#ff5252}
 `;
@@ -137,6 +155,12 @@ window.plOpen = function () {
   if (!d) {
     d = document.createElement('div'); d.id = 'plp'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'Ma playlist');
     d.innerHTML = `<button class="x" type="button" aria-label="Fermer" onclick="plClose()">✕</button>
+<h2>Code famille</h2>
+<p>Si on vous a donné un code famille, saisissez-le une fois : les chaînes de la famille apparaissent dans le Direct (filtre « Famille »).</p>
+<input id="plk" type="password" placeholder="Code famille" autocomplete="off">
+<button class="btn" type="button" id="plkb">Valider le code</button>
+<p class="dst" id="plkm"></p>
+<hr>
 <h2>Ma playlist</h2>
 <p>Ajoutez votre propre playlist M3U : lien https, contenu collé ou fichier. Elle reste uniquement sur cet appareil : rien n'est envoyé au serveur et les autres visiteurs ne la voient pas. N'ajoutez que des playlists dont vous avez le droit d'utiliser les flux.</p>
 <textarea id="plt" placeholder="Collez ici un lien https://… ou le contenu de la playlist (#EXTM3U …)"></textarea>
@@ -147,6 +171,29 @@ window.plOpen = function () {
 <button class="btn g" type="button" id="plx" style="display:none">Tout supprimer</button>`;
     q('#app').appendChild(d);
     q('#pla').onclick = add;
+    q('#plk').value = '';
+    q('#plkb').onclick = async () => {
+      const c = q('#plk').value.trim(), m = q('#plkm');
+      const say = (t, k) => { m.className = 'dst ' + (k || ''); m.textContent = t; };
+      if (!c) {
+        if (getCode()) { try { localStorage.removeItem(FKEY); } catch (e) {} FAM = null; say('Code oublié sur cet appareil.', 'ok'); if (cur_screen() === 's18') live(); }
+        else say('Saisissez le code famille.', 'er');
+        return;
+      }
+      say('Vérification…');
+      try {
+        const r = await _f('/api/famille', { headers: { 'x-famille-code': encodeURIComponent(c) } });
+        if (r.status === 429) { say('Trop d\'essais, réessayez dans quelques minutes.', 'er'); return; }
+        if (!r.ok) { say('Code incorrect.', 'er'); return; }
+        const j = await r.json();
+        try { localStorage.setItem(FKEY, c); } catch (e) {}
+        FAM = j.channels || []; famT = Date.now();
+        q('#plk').value = '';
+        say(FAM.length ? FAM.length + ' chaînes disponibles dans le Direct, filtre « Famille ».' : 'Code accepté, mais aucune chaîne utilisable dans le dossier de la famille.', 'ok');
+        lc = 'famille';
+        if (cur_screen() === 's18') live();
+      } catch (e) { say('Connexion impossible pour le moment.', 'er'); }
+    };
     q('#plx').onclick = () => {
       if (!window.confirm('Supprimer toutes les chaînes de votre playlist ?')) return;
       st([]); PMAP.clear(); count(); msg('Playlist supprimée.', 'ok');
@@ -162,6 +209,6 @@ const _set = window.settings;
 window.settings = function () {
   _set.apply(this, arguments);
   const h = [...document.querySelectorAll('#s17 h3')].find(x => x.textContent.trim() === 'Compte');
-  if (h) h.insertAdjacentHTML('beforebegin', `<h3>Ma playlist</h3><div class="it" onclick="plOpen()"><b style="font-weight:600">Ajouter ma playlist M3U</b><span>${ld().length ? ld().length + ' ›' : '›'}</span></div>`);
+  if (h) h.insertAdjacentHTML('beforebegin', `<h3>Ma playlist</h3><div class="it" onclick="plOpen()"><b style="font-weight:600">Code famille · Ma playlist</b><span>${ld().length ? ld().length + ' ›' : '›'}</span></div>`);
 };
 })();
