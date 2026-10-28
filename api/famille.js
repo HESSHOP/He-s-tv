@@ -61,6 +61,7 @@ module.exports = async (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   if (req.method !== 'GET') return res.status(405).json({ ok: false, error: 'method' });
   const ip = String(req.headers['x-forwarded-for'] || (req.socket && req.socket.remoteAddress) || '').split(',')[0].trim();
+  if (String(process.env.FAMILY_CODE || '').length < 8) return res.status(503).json({ ok: false, error: 'not_configured' });
   if (limited(ip)) return res.status(429).json({ ok: false, error: 'too_many' });
   let code = '';
   try { code = decodeURIComponent(String(req.headers['x-famille-code'] || '')); } catch (e) {}
