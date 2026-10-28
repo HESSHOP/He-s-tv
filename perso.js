@@ -101,6 +101,12 @@ css.textContent = `
 #plp input[type=password]{width:100%;background:var(--card);border:1px solid var(--line);border-radius:10px;color:var(--txt);font:inherit;font-size:15px;padding:12px;outline:0}#plp input[type=password]:focus{border-color:var(--red)}
 #plp hr{border:0;border-top:1px solid var(--line);margin:18px 0}
 #plp input[type=file]{width:100%;margin:10px 0 0;color:var(--mut);font-size:13px}
+#plp .btn{display:block;width:100%;height:50px;margin:12px 0 0;padding:0 16px;border:0;border-radius:12px;font:600 16px/50px system-ui,-apple-system,sans-serif;text-align:center}
+#plp .btn.g{background:#2a2a2f;color:#fff}
+#plp input[type=password],#plp textarea{display:block;margin:0;box-sizing:border-box}
+#plp input[type=file]{display:block;width:100%;margin:12px 0 0;color:var(--mut);font-size:13px}
+#plp input[type=file]::file-selector-button{background:var(--card);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-right:10px;font:600 13px system-ui,-apple-system,sans-serif;cursor:pointer}
+#plp h2{margin-top:6px}
 #plp .dst{font-size:13px;color:var(--mut);margin:10px 0 0}#plp .dst.ok{color:#1db954}#plp .dst.er{color:#ff5252}
 `;
 document.head.appendChild(css);
@@ -183,6 +189,7 @@ window.plOpen = function () {
       say('Vérification…');
       try {
         const r = await _f('/api/famille', { headers: { 'x-famille-code': encodeURIComponent(c) } });
+        if (r.status === 503) { say("Le code famille n'est pas configuré sur le serveur : ajoutez la variable FAMILY_CODE (8 caractères minimum) dans Vercel, puis redéployez.", 'er'); return; }
         if (r.status === 429) { say('Trop d\'essais, réessayez dans quelques minutes.', 'er'); return; }
         if (!r.ok) { say('Code incorrect.', 'er'); return; }
         const j = await r.json();
